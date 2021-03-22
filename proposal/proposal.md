@@ -20,14 +20,17 @@ A general knowledge of the *Getting Things Done* workflow is needed (see images 
 **Basic Workflow** 
 
 ![Basic GTD Workflow](basic-workflow.png)
-
 **Advanced Workflow**
-
 ![Advanced GTD Workflow](advanced-workflow.png)
 
 ### What does your database schema look like?
+
 ### What kinds of issues might you run into with your API?
+
 ### Is there any sensitive information you need to secure?
+
 ### What functionality will your app include?
+
 ### What will the user flow look like?
+
 ### What features make your site more than CRUD? Do you have any stretch goals?
