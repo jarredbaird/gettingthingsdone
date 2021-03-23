@@ -24,14 +24,18 @@ A general knowledge of the *Getting Things Done* workflow is needed (see images 
 ![Advanced GTD Workflow](advanced-workflow.png)
 
 ### What does your database schema look like?
-<iframe width="560" height="315" src='https://dbdiagram.io/embed/6059f9ececb54e10c33cdbed'> </iframe>
+[![DB v0.0](gettingthingsdone_v0.0.png)](https://dbdiagram.io/d/6059f9ececb54e10c33cdbed)
 
 ### What kinds of issues might you run into with your API?
 
-### Is there any sensitive information you need to secure?
 
+### Is there any sensitive information you need to secure?
+Possibly app passwords to connect to peeps emails
 ### What functionality will your app include?
+Everything indicated in the images above
 
 ### What will the user flow look like?
+Like the image above (be sure to talk to Michael about how to show this (e.g. UML Diagram, Mind Map, interpretive dancing, etc))
 
 ### What features make your site more than CRUD? Do you have any stretch goals?
+LOTS of functionality surrounding every model in the db. I will verbally explain more to Michael tonight, and find a more formal way to describe here.
