@@ -24,6 +24,7 @@ A general knowledge of the *Getting Things Done* workflow is needed (see images 
 ![Advanced GTD Workflow](advanced-workflow.png)
 
 ### What does your database schema look like?
+<iframe width="560" height="315" src='https://dbdiagram.io/embed/6059f9ececb54e10c33cdbed'> </iframe>
 
 ### What kinds of issues might you run into with your API?
 
