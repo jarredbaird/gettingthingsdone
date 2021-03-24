@@ -1,7 +1,7 @@
 # 💍The Proposal 💒❤️
 
 ##  What goal will your website be designed to achieve? 
-To implement a digital design of the *Getting Things Done*  method
+To implement a digital version of the *Getting Things Done*  method
 ***
 ##  What kind of users will visit your site? In other words, what is the demographic of your users?
 This app will target the general population (consumers), as *Getting Things Done*  is meant to be used for general productivity in both  personal, familial, and professional realms. **That said:** *Getting Things Done*, as a **method**, is implemented by a select few people who have read the book *Getting Things Done* by David Allen
