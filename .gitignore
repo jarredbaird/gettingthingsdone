@@ -1,2 +1,5 @@
 proposal/flask-mail/venv
 proposal/flask-mail/__pycache__
+venv
+__pycache__
+.vscode

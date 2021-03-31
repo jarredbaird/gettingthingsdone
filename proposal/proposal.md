@@ -13,6 +13,8 @@ The Mapquest API can help with address correction, searching, and embedded maps
 Mailchimp or flask-email should suffice for this
 ### A means to speed up "add to inbox", "clarify task details", etc
 speech-to-text (api undetermined)
+### calendar
+a calendar api would be nice
 ***
 ##  In brief, outline your approach to creating your project (knowing that you may not know everything in advance and that these details might change later). Answer questions like the ones below, but feel free to add more information: 
 A general knowledge of the *Getting Things Done* workflow is needed (see images below). Much of the logic (and the database, for that matter) will depend on the workflows 
@@ -33,6 +35,7 @@ A general knowledge of the *Getting Things Done* workflow is needed (see images 
 
 ### Is there any sensitive information you need to secure?
 Possibly app passwords to connect to peeps emails
+
 ### What functionality will your app include?
 Everything indicated in the images above
 
