@@ -1,4 +1,4 @@
-"""SQLAlchemy models for Warbler."""
+"""SQLAlchemy models for GTD."""
 
 from datetime import datetime
 
@@ -116,3 +116,5 @@ class WorkMode(db.Model):
     wm_id = db.Column(db.Integer, primary_key=True)
     wm_name = db.Column(db.Text, nullable=False)
     wm_view = db.Column(db.Text)
+
+
