@@ -1,9 +1,7 @@
-list-group-item
+list - group - item;
 
-list-group
+list - group;
 
-input-box
+input - box;
 
-NavBar
-
-
+NavBar;

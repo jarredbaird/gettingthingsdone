@@ -1,7 +1,5 @@
 class ListGroup {
   constructor() {
-    this.$div = $("<div>")
-      .addClass("list-group")
-      .attr("id", "inbox-list")
+    this.$group = $("<div>").addClass("list-group").attr("id", "inbox-list");
   }
 }
