@@ -1,4 +1,4 @@
-data = {
+let data = {
   date: "2021-05-10",
   title: 'Jarred\'s title',
   descr: 'Jarred\'s description',
@@ -12,33 +12,33 @@ class ListGroupItem {
     this.dateDiff = this.findDateDiff(data.date);
 
     // create list container for everything else
-    this.$listItemContainer = $(document.createElement('a'))
+    this.$listItemContainer = $('<a>')
       .attr('id', data.id)
       .addClass("list-group-item list-group-item-action");
 
 
     // create the div to go in the <a>
-    this.$contentDiv = $(document.createElement('div'))
+    this.$contentDiv = $('<div>')
       .addClass("d-flex w-100 justify-content-between")
 
     // create h5
-    this.$title = $(document.createElement('h5'))
+    this.$title = $('<h5>')
       .text(`${data.title}`);
 
     // create first small
-    this.$timer = $(document.createElement('small'))
+    this.$timer = $('<small>')
       .text(`${this.dateDiff} outstanding`);
 
     // create p
-    this.$descr = $(document.createElement('p'))
+    this.$descr = $('<p>')
       .text(`${data.descr}`);
 
     // create second small
-    this.$s2 = $(document.createElement('small'))
+    this.$s2 = $('<small>')
       .text("Jarred's small text");
 
     // put it all together
-    $('.list-group').append(this.$listItemContainer.append(this.$contentDiv.append(this.$title, this.$timer), this.$descr, this.$s2));
+    $('#inbox-list').append(this.$listItemContainer.append(this.$contentDiv.append(this.$title, this.$timer), this.$descr, this.$s2));
 
   };
 
