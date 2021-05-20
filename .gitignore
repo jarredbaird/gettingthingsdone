@@ -6,3 +6,4 @@ __pycache__
 header-files.work.vim
 package-lock.json
 package.json
+node_modules/
