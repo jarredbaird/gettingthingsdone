@@ -1,5 +1,5 @@
 let data = {
-  date: "2021-05-10",
+  date: "2021-05-14 16:31:00",
   title: "Jarred's title",
   descr: "Jarred's description",
   id: "1",
@@ -24,22 +24,13 @@ class ListGroupItem {
     this.$title = $("<h5>").text(`${data.title}`);
 
     // create first small
-    this.$timer = $("<small>").text(`Outstanding for ${this.dateDiff}`);
+    this.$timer = $("<small>").text(this.dateDiff);
 
     // create p
     this.$descr = $("<p>").text(`${data.descr}`);
 
     // create second small
-    this.$s2 = $("<small>").text("Jarred's small text");
-
-    // put it all together
-    $("#inbox-list").append(
-      this.$listItemContainer.append(
-        this.$contentDiv.append(this.$title, this.$timer),
-        this.$descr,
-        this.$s2
-      )
-    );
+    this.$littleDescr = $("<small>").text("Jarred's small text");
   }
 
   // 1 minute = 60000 milliseconds
@@ -51,20 +42,36 @@ class ListGroupItem {
     let toReturn;
     switch (true) {
       case diff < 60000:
-        toReturn = `Created ${diff / 1000} seconds ago`;
+        toReturn = `Created ${Math.round(diff / 1000)} seconds ago`;
         break;
       case diff < 3600000:
-        toReturn = `Created ${(diff / 1000) * 60} minutes ago`;
+        toReturn = `Created ${Math.round(diff / 1000 / 60)} minutes ago`;
         break;
       case diff < 86400000:
-        toReturn = `Created ${(diff / 1000) * 60 * 60} hours ago`;
+        toReturn = `Created ${Math.round(diff / 1000 / (60 * 60))} hours ago`;
         break;
       case diff < 604800000:
-        toReturn = `Created ${(diff / 1000) * 60 * 60 * 24} days ago`;
+        toReturn = `Created ${Math.round(
+          diff / 1000 / (60 * 60 * 24)
+        )} days ago`;
         break;
       default:
         toReturn = `Created a super long time ago`;
     }
     return toReturn;
   }
+
+  addItem(listGroup) {
+    // put it all together
+    listGroup.append(
+      this.$listItemContainer.append(
+        this.$contentDiv.append(this.$title, this.$timer),
+        this.$descr,
+        this.$littleDescr
+      )
+    );
+  }
 }
+
+let newItem = new ListGroupItem(data);
+newItem.addItem($("#inbox-list"));

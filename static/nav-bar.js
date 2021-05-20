@@ -1,3 +1,4 @@
+// Initialise an instance of our router class.
 class NavBar {
   constructor() {
     this.$nav = $("<nav>").addClass([
@@ -43,6 +44,8 @@ class NavBar {
           .text("Disabled")
       );
     this.$menuItems = [this.$sampleItem1, this.$sampleItem2, this.$sampleItem3];
+    this.$subNavContainer = $("<div>").addClass("container");
+    this.$gridInit = $("<div>").addClass("row");
   }
 
   makeNavbar() {
@@ -53,7 +56,11 @@ class NavBar {
           this.$toggler.append(this.$toggleIcon),
           this.$navbar.append(this.$menuItemList.append(this.$menuItems))
         )
-      )
+      ),
+      this.$subNavContainer.append(this.$gridInit)
     );
   }
 }
+
+let mainNav = new NavBar();
+mainNav.makeNavbar();
