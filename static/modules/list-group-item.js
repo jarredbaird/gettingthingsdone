@@ -1,5 +1,7 @@
+import inboxGroup from "list-group.js";
+
 let data = {
-  date: "2021-05-14 16:31:00",
+  date: "2021-05-16 16:31:00",
   title: "Jarred's title",
   descr: "Jarred's description",
   id: "1",
@@ -74,4 +76,4 @@ class ListGroupItem {
 }
 
 let newItem = new ListGroupItem(data);
-newItem.addItem($("#inbox-list"));
+newItem.addItem(inboxGroup);

@@ -26,3 +26,11 @@ CURR_USER_KEY = "curr_user"
 @app.route('/')
 def home():
     return render_template('home.html')
+
+@app.route('/api/tasks/randomTask', methods=['GET'])
+def getRandomTask():
+    return createRandomTask()
+
+@app.route('/api/tasks', methods=['POST'])
+def addTask():
+    return 0

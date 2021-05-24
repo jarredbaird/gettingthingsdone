@@ -1,4 +1,5 @@
-// Initialise an instance of our router class.
+import { jQuery, $ } from "../app.js";
+
 class NavBar {
   constructor() {
     this.$nav = $("<nav>").addClass([
@@ -44,8 +45,8 @@ class NavBar {
           .text("Disabled")
       );
     this.$menuItems = [this.$sampleItem1, this.$sampleItem2, this.$sampleItem3];
-    this.$subNavContainer = $("<div>").addClass("container");
-    this.$gridInit = $("<div>").addClass("row");
+    this.$subNavContainer = $("<div>").addClass("container p-4");
+    this.$gridInit = $("<div>").addClass("row g-3").attr("id", "main-grid");
   }
 
   makeNavbar() {
@@ -62,5 +63,5 @@ class NavBar {
   }
 }
 
-let mainNav = new NavBar();
+export let mainNav = new NavBar();
 mainNav.makeNavbar();
