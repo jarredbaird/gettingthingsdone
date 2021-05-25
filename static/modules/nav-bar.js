@@ -1,6 +1,4 @@
-import { jQuery, $ } from "../app.js";
-
-class NavBar {
+export class NavBar {
   constructor() {
     this.$nav = $("<nav>").addClass([
       "navbar",
@@ -50,18 +48,15 @@ class NavBar {
   }
 
   makeNavbar() {
-    $("body").prepend(
+    $("body").append(
       this.$nav.append(
         this.$barContainer.append(
           this.$brand,
           this.$toggler.append(this.$toggleIcon),
           this.$navbar.append(this.$menuItemList.append(this.$menuItems))
-        )
-      ),
-      this.$subNavContainer.append(this.$gridInit)
+        ),
+        this.$subNavContainer.append(this.$gridInit)
+      )
     );
   }
 }
-
-export let mainNav = new NavBar();
-mainNav.makeNavbar();

@@ -1,13 +1,11 @@
-import inboxGroup from "list-group.js";
-
-let data = {
+export let data = {
   date: "2021-05-16 16:31:00",
   title: "Jarred's title",
   descr: "Jarred's description",
   id: "1",
 };
 
-class ListGroupItem {
+export class ListGroupItem {
   constructor(data) {
     // find the difference between the date the task was opened and now
     this.dateDiff = this.findDateDiff(data.date);
@@ -63,17 +61,13 @@ class ListGroupItem {
     return toReturn;
   }
 
-  addItem(listGroup) {
+  makeItem() {
     // put it all together
-    listGroup.append(
-      this.$listItemContainer.append(
-        this.$contentDiv.append(this.$title, this.$timer),
-        this.$descr,
-        this.$littleDescr
-      )
+    let item = this.$listItemContainer.append(
+      this.$contentDiv.append(this.$title, this.$timer),
+      this.$descr,
+      this.$littleDescr
     );
+    return item;
   }
 }
-
-let newItem = new ListGroupItem(data);
-newItem.addItem(inboxGroup);
