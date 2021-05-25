@@ -30,7 +30,22 @@ export class ListGroupItem {
     this.$descr = $("<p>").text(`${data.descr}`);
 
     // create second small
-    this.$littleDescr = $("<small>").text("Jarred's small text");
+    this.$rangeLabel = $("<label>")
+      .addClass("form-label")
+      .attr("for", `${data.id}`)
+      .text("How pwned is this?");
+    this.$slideRange = $("<input>")
+      .addClass("form-range")
+      .attr({ id: `${data.id}`, type: "range", min: "0", max: "5" });
+    this.$rangeDescr = $("<div>")
+      .addClass("row px-5")
+      .append(
+        $("<div>").addClass("col").text("not pwned"),
+        $("<div>").addClass("col").text("slightly pwned"),
+        $("<div>").addClass("col").text("getting pwned"),
+        $("<div>").addClass("col").text("pretty darn pwned"),
+        $("<div>").addClass("col").text("pwned 2 the max")
+      );
   }
 
   // 1 minute = 60000 milliseconds
@@ -66,7 +81,9 @@ export class ListGroupItem {
     let item = this.$listItemContainer.append(
       this.$contentDiv.append(this.$title, this.$timer),
       this.$descr,
-      this.$littleDescr
+      this.$rangeLabel,
+      this.$slideRange,
+      this.$rangeDescr
     );
     return item;
   }

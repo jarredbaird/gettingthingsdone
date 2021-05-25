@@ -47,16 +47,16 @@ export class NavBar {
     this.$gridInit = $("<div>").addClass("row g-3").attr("id", "main-grid");
   }
 
-  makeNavbar() {
-    $("body").append(
+  makeNavbar($mama) {
+    $mama.append(
       this.$nav.append(
         this.$barContainer.append(
           this.$brand,
           this.$toggler.append(this.$toggleIcon),
           this.$navbar.append(this.$menuItemList.append(this.$menuItems))
-        ),
-        this.$subNavContainer.append(this.$gridInit)
-      )
+        )
+      ),
+      this.$subNavContainer.append(this.$gridInit)
     );
   }
 }

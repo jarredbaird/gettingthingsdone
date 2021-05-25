@@ -4,11 +4,9 @@ import { ListGroup } from "./modules/list-group.js";
 import { ListGroupItem, data } from "./modules/list-group-item.js";
 
 let navBar = new NavBar();
-navBar.makeNavbar();
-
+navBar.makeNavbar($("body"));
 let inputBox = new InputBox();
-let orderedInputBox = inputBox.makeInputField();
-navBar.$gridInit.append(orderedInputBox);
+inputBox.makeInputBox($("#main-grid"));
 
 let listGroup = new ListGroup();
 listGroup.makeListGroup(navBar.$gridInit);
