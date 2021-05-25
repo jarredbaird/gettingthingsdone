@@ -34,18 +34,20 @@ export class ListGroupItem {
       .addClass("form-label")
       .attr("for", `${data.id}`)
       .text("How pwned is this?");
-    this.$slideRange = $("<input>")
-      .addClass("form-range")
-      .attr({ id: `${data.id}`, type: "range", min: "0", max: "5" });
-    this.$rangeDescr = $("<div>")
-      .addClass("row px-5")
-      .append(
-        $("<div>").addClass("col").text("not pwned"),
-        $("<div>").addClass("col").text("slightly pwned"),
-        $("<div>").addClass("col").text("getting pwned"),
-        $("<div>").addClass("col").text("pretty darn pwned"),
-        $("<div>").addClass("col").text("pwned 2 the max")
-      );
+    this.$sliderMain = $("<div>").addClass("slider slider-horizontal").attr({
+      id: "ex19",
+      type: "text",
+      "data-provide": "slider",
+      "data-slider-ticks": "[1, 2, 3, 4, 5]",
+      "data-slider-ticks-labels":
+        "['not pwned','slightly pwned', 'getting pwned', 'pretty darn pwned', 'pwned 2 the max']",
+      "data-slider-min": "1",
+      "data-slider-max": "3",
+      "data-slider-step": "1",
+      "data-slider-value": "3",
+      "data-slider-tooltip": "hide",
+    });
+    this.$sliderTrack = $("<div>").addClass("slider-track");
   }
 
   // 1 minute = 60000 milliseconds
@@ -82,8 +84,7 @@ export class ListGroupItem {
       this.$contentDiv.append(this.$title, this.$timer),
       this.$descr,
       this.$rangeLabel,
-      this.$slideRange,
-      this.$rangeDescr
+      this.$sliderMain.append(this.$sliderTrack)
     );
     return item;
   }
