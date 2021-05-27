@@ -34,20 +34,8 @@ export class ListGroupItem {
       .addClass("form-label")
       .attr("for", `${data.id}`)
       .text("How pwned is this?");
-    this.$sliderMain = $("<div>").addClass("slider slider-horizontal").attr({
-      id: "ex19",
-      type: "text",
-      "data-provide": "slider",
-      "data-slider-ticks": "[1, 2, 3, 4, 5]",
-      "data-slider-ticks-labels":
-        "['not pwned','slightly pwned', 'getting pwned', 'pretty darn pwned', 'pwned 2 the max']",
-      "data-slider-min": "1",
-      "data-slider-max": "3",
-      "data-slider-step": "1",
-      "data-slider-value": "3",
-      "data-slider-tooltip": "hide",
-    });
-    this.$sliderTrack = $("<div>").addClass("slider-track");
+    // Instantiate a slider
+    this.$slider = $("<input>").attr({ type: "text", id: "ext12c" });
   }
 
   // 1 minute = 60000 milliseconds
@@ -84,8 +72,15 @@ export class ListGroupItem {
       this.$contentDiv.append(this.$title, this.$timer),
       this.$descr,
       this.$rangeLabel,
-      this.$sliderMain.append(this.$sliderTrack)
+      this.$slider
     );
+    this.$slider.slider({
+      id: "slider12c",
+      min: 0,
+      max: 10,
+      range: true,
+      value: [3, 7],
+    });
     return item;
   }
 }

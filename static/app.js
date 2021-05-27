@@ -11,5 +11,6 @@ inputBox.makeInputBox($("#main-grid"));
 let listGroup = new ListGroup();
 listGroup.makeListGroup(navBar.$gridInit);
 
+debugger;
 let listGroupItem = new ListGroupItem(data);
 listGroup.addItem(listGroupItem.makeItem());
