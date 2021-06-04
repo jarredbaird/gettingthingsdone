@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask, render_template, request, flash, redirect, session, g
-from flask_debugtoolbar import DebugToolbarExtension
+# from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from random_task import createRandomTask
 import pdb
@@ -17,7 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgre
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "echnidna_eggs")
-toolbar = DebugToolbarExtension(app)
+# toolbar = DebugToolbarExtension(app)
 connect_db(app)
 
 CURR_USER_KEY = "curr_user"
@@ -26,3 +26,11 @@ CURR_USER_KEY = "curr_user"
 @app.route('/')
 def home():
     return render_template('home.html')
+
+@app.route('/api/tasks/randomTask', methods=['GET'])
+def getRandomTask():
+    return createRandomTask()
+
+@app.route('/api/tasks', methods=['POST'])
+def addTask():
+    return 0

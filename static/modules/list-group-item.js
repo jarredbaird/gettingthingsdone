@@ -1,11 +1,11 @@
-let data = {
-  date: "2021-05-14 16:31:00",
+export let data = {
+  date: "2021-05-16 16:31:00",
   title: "Jarred's title",
   descr: "Jarred's description",
   id: "1",
 };
 
-class ListGroupItem {
+export class ListGroupItem {
   constructor(data) {
     // find the difference between the date the task was opened and now
     this.dateDiff = this.findDateDiff(data.date);
@@ -30,7 +30,22 @@ class ListGroupItem {
     this.$descr = $("<p>").text(`${data.descr}`);
 
     // create second small
-    this.$littleDescr = $("<small>").text("Jarred's small text");
+    this.$rangeLabel = $("<label>")
+      .addClass("form-label")
+      .attr("for", `${data.id}`)
+      .text("How pwned is this?");
+    this.$slideRange = $("<input>")
+      .addClass("form-range")
+      .attr({ id: `${data.id}`, type: "range", min: "0", max: "5" });
+    this.$rangeDescr = $("<div>")
+      .addClass("row px-5")
+      .append(
+        $("<div>").addClass("col").text("not pwned"),
+        $("<div>").addClass("col").text("slightly pwned"),
+        $("<div>").addClass("col").text("getting pwned"),
+        $("<div>").addClass("col").text("pretty darn pwned"),
+        $("<div>").addClass("col").text("pwned 2 the max")
+      );
   }
 
   // 1 minute = 60000 milliseconds
@@ -61,17 +76,15 @@ class ListGroupItem {
     return toReturn;
   }
 
-  addItem(listGroup) {
+  makeItem() {
     // put it all together
-    listGroup.append(
-      this.$listItemContainer.append(
-        this.$contentDiv.append(this.$title, this.$timer),
-        this.$descr,
-        this.$littleDescr
-      )
+    let item = this.$listItemContainer.append(
+      this.$contentDiv.append(this.$title, this.$timer),
+      this.$descr,
+      this.$rangeLabel,
+      this.$slideRange,
+      this.$rangeDescr
     );
+    return item;
   }
 }
-
-let newItem = new ListGroupItem(data);
-newItem.addItem($("#inbox-list"));
