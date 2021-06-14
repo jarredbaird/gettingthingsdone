@@ -1,9 +1,10 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, jsonify, g
 # from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-from random_task import createRandomTask
+from random_item import createRandomItem
+from models import Item
 import pdb
 
 # from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
@@ -27,10 +28,13 @@ CURR_USER_KEY = "curr_user"
 def home():
     return render_template('home.html')
 
-@app.route('/api/tasks/randomTask', methods=['GET'])
-def getRandomTask():
-    return createRandomTask()
+@app.route('/api/item/randomItem', methods=['GET'])
+def getRandomItem():
+    return createRandomItem()
 
-@app.route('/api/tasks', methods=['POST'])
-def addTask():
-    return 0
+@app.route('/api/item', methods=['POST'])
+def addItem():
+    item = Item(i_title=request.json['title'])
+    db.session.add(item)
+    item_json = jsonify(item.serialize())
+    return item_json
