@@ -11,6 +11,17 @@ def connect_db(app):
     db.app = app
     db.init_app(app)
 
+class Item(db.Model):
+    """This item ends up in your inbox to be refined later"""
+    __tablename__ = "items"
+    i_id = db.Column(db.Integer, primary_key=True)
+    i_name = db.Column(db.Text, nullable=False)
+    u_id = db.Column(db.Integer, db.ForeignKey('users.u_id'))
+    o_id = db.Column(db.Integer, db.ForeignKey('outcomes.o_id'))
+    c_id = db.Column(db.Integer, db.ForeignKey('contexts.c_id'))
+    ns_id = db.Column(db.Integer, db.ForeignKey('next_steps.ns_id'))
+    ei_id = db.Column(db.Integer, db.ForeignKey('email_items.ei_id'))
+
 class User(db.Model):
     """User Model"""
 
@@ -32,17 +43,6 @@ class NextStep(db.Model):
     __tablename__ = "next_steps"
     ns_id = db.Column(db.Integer, primary_key=True)
     ns_name = db.Column(db.Text, nullable=False)
-
-class Item(db.Model):
-    """This item ends up in your inbox to be refined later"""
-    __tablename__ = "items"
-    i_id = db.Column(db.Integer, primary_key=True)
-    i_name = db.Column(db.Text, nullable=False)
-    u_id = db.Column(db.Integer, db.ForeignKey('users.u_id'))
-    o_id = db.Column(db.Integer, db.ForeignKey('outcomes.o_id'))
-    c_id = db.Column(db.Integer, db.ForeignKey('contexts.c_id'))
-    ns_id = db.Column(db.Integer, db.ForeignKey('next_steps.ns_id'))
-    ei_id = db.Column(db.Integer, db.ForeignKey('email_items.ei_id'))
 
 class EmailItem(db.Model):
     """all the parts of emails that come in"""
