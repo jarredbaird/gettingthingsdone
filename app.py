@@ -28,9 +28,9 @@ CURR_USER_KEY = "curr_user"
 def home():
     return render_template('home.html')
 
-@app.route('/api/item/randomItem', methods=['GET'])
+@app.route('/api/item/random-item', methods=['GET'])
 def getRandomItem():
-    return createRandomItem()
+    return {"body": createRandomItem()}
 
 @app.route('/api/item', methods=['POST'])
 def addItem():
