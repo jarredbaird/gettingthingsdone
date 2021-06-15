@@ -30,21 +30,6 @@ export class InputBox {
     );
   }
   generateRandomTask() {
-    fetch("/api/endpoint")
-      .then((payload) => payload.json())
-      .then((resp) => {
-        var data = resp.data; // array of Reddit subs returned from "endpoint.js"
-        console.log(JSON.stringify(data));
-        var html = "<ol>";
-        data.forEach(function (sub) {
-          html +=
-            '<a href="/axios/' + sub.path + '">' + sub.name + "</a><br />";
-        });
-        html += "</ol>";
-        document.getElementById("list").innerHTML = html;
-      })
-      .catch((err) => {
-        console.log("ERROR. Something went wrong.");
-      });
+    fetch("/api/item/random-item").then((resp) => resp.json());
   }
 }
