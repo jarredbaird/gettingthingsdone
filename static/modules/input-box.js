@@ -40,5 +40,4 @@ export class InputBox {
       );
       return newTitle;
     }
-  }
 }
