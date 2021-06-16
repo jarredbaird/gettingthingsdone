@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 
 from flask import Flask, render_template, request, flash, redirect, session, jsonify, g
@@ -32,14 +33,21 @@ def getAllItems():
     items = [item.serialize() for item in Item.query.all()]
     return json.dumps(items)
 
-@app.route('/api/item/randomItem', methods=['POST'])
+@app.route('/api/item/random-item', methods=['POST'])
 def addRandomItem():
-    randomItem = Item.generateRandomItem()
+    randomItem = Item(i_title=Item.generateRandomTitle(), 
+                      i_dt_created=datetime.now()
+                      )
     db.session.add(randomItem)
+    db.session.commit()
     return jsonify(randomItem.serialize())
 
 @app.route('/api/item', methods=['POST'])
 def addItem():
-    item = Item(i_title=request.json['title'])
+    # pdb.set_trace()
+    item = Item(i_title=request.json['i_title'], 
+                i_dt_created=datetime.now()
+                )
     db.session.add(item)
+    db.session.commit()
     return jsonify(item.serialize())

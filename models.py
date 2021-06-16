@@ -2,7 +2,8 @@
 
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from random_item import createRandomItem
+from random_item import createRandomTitle
+import pdb
 
 db = SQLAlchemy()
 
@@ -24,10 +25,12 @@ class Item(db.Model):
     ns_id = db.Column(db.Integer, db.ForeignKey('next_steps.ns_id'))
     ei_id = db.Column(db.Integer, db.ForeignKey('email_items.ei_id'))
 
-    def generateRandomItem(self):
-        self.title = createRandomItem()
+    @classmethod
+    def generateRandomTitle(cls):
+        return createRandomTitle()
 
     def serialize(self):
+        # pdb.set_trace()
         return {
             'i_id': self.i_id,
             'i_title': self.i_title,

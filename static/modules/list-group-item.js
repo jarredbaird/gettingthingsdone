@@ -1,7 +1,7 @@
 export class ListGroupItem {
   constructor(data) {
     // find the difference between the date the task was opened and now
-    this.dateDiff = this.findDateDiff(data.i_dt_created);
+    this.dateDiff = this.constructor.findDateDiff(data.i_dt_created);
 
     // create list container for everything else
     this.$listItemContainer = $("<a>")
@@ -16,11 +16,13 @@ export class ListGroupItem {
     // create h5
     this.$i_title = $("<h5>").text(`${data.i_title}`);
 
-    // create first small
-    this.$timer = $("<small>").text(this.dateDiff);
+    // display how long ago this item was created
+    this.$timer = $("<small>")
+      .text(this.dateDiff)
+      .attr("data-i-dt-created", `${data.i_dt_created}`);
 
     // create p
-    this.$descr = $("<p>").text(`${data.i_descr}`);
+    this.$descr = $("<p>").text(`${data.i_descr ? data.i_descr : ""}`);
 
     // create slider - not gonna use for now
     // this.$rangeLabel = $("<label>")
@@ -45,10 +47,13 @@ export class ListGroupItem {
   // 1 hour = 3600000 milliseconds
   // 1 day = 86400000 milliseconds
   // 1 wk = 604800000 milliseconds
-  findDateDiff(date) {
+  static findDateDiff(date) {
     let diff = Date.now() - Date.parse(date);
     let toReturn;
     switch (true) {
+      case diff < 500:
+        toReturn = "Created just now";
+        break;
       case diff < 60000:
         let secDiff = Math.round(diff / 1000);
         toReturn = `Created ${secDiff} second${secDiff === 1 ? "" : "s"} ago`;
@@ -83,5 +88,28 @@ export class ListGroupItem {
       // this.$rangeDescr
     );
     return item;
+  }
+
+  // returns json item with random title
+  static async generateRandomItem() {
+    let newItem = await fetch("/api/item/random-item", {
+      method: "POST",
+    }).then(function (resp) {
+      return resp.json();
+    });
+    return newItem;
+  }
+
+  static async createCustomItem(title) {
+    let newItem = await fetch("/api/item", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ i_title: title }),
+    }).then(function (resp) {
+      return resp.json();
+    });
+    return newItem;
   }
 }

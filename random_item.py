@@ -87,7 +87,7 @@ dictionary = {
                 ]
 }
 
-def createRandomItem():
+def createRandomTitle():
     n = random.randint(0,19)
     v = random.randint(0,19)
     a = random.randint(0,19)
