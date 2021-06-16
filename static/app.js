@@ -55,3 +55,4 @@ inputBox.$submitBtn.on("click", async function (event) {
     }
   }
 });
+
