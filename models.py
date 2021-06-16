@@ -1,8 +1,9 @@
-"""SQLAlchemy models for Warbler."""
+"""SQLAlchemy models for GTD"""
 
 from datetime import datetime
-
 from flask_sqlalchemy import SQLAlchemy
+from random_item import createRandomTitle
+import pdb
 
 db = SQLAlchemy()
 
@@ -16,16 +17,25 @@ class Item(db.Model):
     __tablename__ = "items"
     i_id = db.Column(db.Integer, primary_key=True)
     i_title = db.Column(db.Text, nullable=False)
+    i_descr = db.Column(db.Text, nullable=True)
+    i_dt_created = db.Column(db.DateTime, nullable=False, default=datetime.now())
     u_id = db.Column(db.Integer, db.ForeignKey('users.u_id'))
     o_id = db.Column(db.Integer, db.ForeignKey('outcomes.o_id'))
     c_id = db.Column(db.Integer, db.ForeignKey('contexts.c_id'))
     ns_id = db.Column(db.Integer, db.ForeignKey('next_steps.ns_id'))
     ei_id = db.Column(db.Integer, db.ForeignKey('email_items.ei_id'))
 
+    @classmethod
+    def generateRandomTitle(cls):
+        return createRandomTitle()
+
     def serialize(self):
+        # pdb.set_trace()
         return {
             'i_id': self.i_id,
             'i_title': self.i_title,
+            'i_descr': self.i_descr,
+            'i_dt_created': self.i_dt_created.isoformat(),
             'u_id': self.u_id,
             'o_id': self.o_id,
             'c_id': self.ns_id,

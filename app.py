@@ -1,11 +1,11 @@
+from datetime import datetime
 import os
 
 from flask import Flask, render_template, request, flash, redirect, session, jsonify, g
 # from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
-from random_item import createRandomItem
 from models import Item
-import pdb
+import pdb, json
 
 # from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
 from models import db, connect_db
@@ -28,13 +28,26 @@ CURR_USER_KEY = "curr_user"
 def home():
     return render_template('home.html')
 
-@app.route('/api/item/random-item', methods=['GET'])
-def getRandomItem():
-    return {"body": createRandomItem()}
+@app.route('/api/items/all', methods=['GET'])
+def getAllItems():
+    items = [item.serialize() for item in Item.query.all()]
+    return json.dumps(items)
+
+@app.route('/api/item/random-item', methods=['POST'])
+def addRandomItem():
+    randomItem = Item(i_title=Item.generateRandomTitle(), 
+                      i_dt_created=datetime.now()
+                      )
+    db.session.add(randomItem)
+    db.session.commit()
+    return jsonify(randomItem.serialize())
 
 @app.route('/api/item', methods=['POST'])
 def addItem():
-    item = Item(i_title=request.json['title'])
+    # pdb.set_trace()
+    item = Item(i_title=request.json['i_title'], 
+                i_dt_created=datetime.now()
+                )
     db.session.add(item)
-    item_json = jsonify(item.serialize())
-    return item_json
+    db.session.commit()
+    return jsonify(item.serialize())
