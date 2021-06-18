@@ -5,7 +5,6 @@ from models import Item
 import pdb, json
 from datetime import datetime
 import os
-import email_listener
 
 # from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
 from models import db, connect_db
