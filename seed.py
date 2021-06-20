@@ -1,6 +1,5 @@
-from app import app
+from api import app
 from models import db, Item
-
 
 db.drop_all()
 db.create_all()
