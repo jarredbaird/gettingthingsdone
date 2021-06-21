@@ -11,9 +11,7 @@ export class ListGroup {
   }
 
   async getItems() {
-    let allItems = await fetch("/api/items/all").then((resp) => {
-      resp.json();
-    });
+    let allItems = await fetch("/api/items/all").then((resp) => resp.json());
     return allItems;
   }
 }
