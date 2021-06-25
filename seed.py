@@ -1,4 +1,4 @@
-from api import app
+from app import app
 from models import db, Item
 
 db.drop_all()
