@@ -26,15 +26,14 @@ function updateTimeSinceCreation() {
 
 inputBox.$randBtn.on("click", async function (event) {
   event.preventDefault();
-  updateTimeSinceCreation();
   let response = await ListGroupItem.generateRandomItem();
   let nonDOMitem = new ListGroupItem(response);
   listGroup.addItem(nonDOMitem.makeItem());
+  updateTimeSinceCreation();
 });
 
 inputBox.$submitBtn.on("click", async function (event) {
   event.preventDefault();
-  updateTimeSinceCreation();
   if (inputBox.$inputField.val() === "") {
     let popover = new bootstrap.Popover(document.querySelector("input"), {
       content: "Input something...please",
@@ -50,9 +49,9 @@ inputBox.$submitBtn.on("click", async function (event) {
     inputBox.$inputField.val("");
     let nonDOMitem = new ListGroupItem(response);
     listGroup.addItem(nonDOMitem.makeItem());
+    updateTimeSinceCreation();
     if (document.querySelector(".popover")) {
       popover.hide();
     }
   }
 });
-

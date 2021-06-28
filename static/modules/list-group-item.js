@@ -2,6 +2,7 @@ export class ListGroupItem {
   constructor(data) {
     // find the difference between the date the task was opened and now
     this.dateDiff = this.constructor.findDateDiff(data.i_dt_created);
+    this.i_dt_created = data.i_dt_created;
 
     // create list container for everything else
     this.$listItemContainer = $("<a>")
@@ -94,9 +95,7 @@ export class ListGroupItem {
   static async generateRandomItem() {
     let newItem = await fetch("/api/item/random-item", {
       method: "POST",
-    }).then(function (resp) {
-      return resp.json();
-    });
+    }).then((resp) => resp.json());
     return newItem;
   }
 
@@ -107,9 +106,7 @@ export class ListGroupItem {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ i_title: title }),
-    }).then(function (resp) {
-      return resp.json();
-    });
+    }).then((resp) => resp.json());
     return newItem;
   }
 }
