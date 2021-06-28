@@ -1,23 +1,34 @@
+
+import pdb, json, os
 from models import db, connect_db, Item
 from schema import ItemRequest, ItemResponse
 from flask import Flask, render_template, request, flash, redirect, session, jsonify, g
 from flask_apispec.annotations import use_kwargs
-# from flask_debugtoolbar import DebugToolbarExtension
-from sqlalchemy.exc import IntegrityError
-import pdb, json
-from datetime import datetime
-import os
-from flask_restful import reqparse, Api, Resource
+from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import marshal_with, doc
 from flask_apispec.views import MethodResource
+from flask_restful import reqparse, Api, Resource
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
-from flask_apispec.extension import FlaskApiSpec
+from sqlalchemy.exc import IntegrityError
+# from flask_debugtoolbar import DebugToolbarExtension
+from datetime import datetime
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 
-
+# Set up the app, api, and request parser
 app = Flask(__name__)
 api = Api(app)
 parser = reqparse.RequestParser()
+
+# Set up gmail api auth and the api service
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+creds = None
+if os.path.exists('token.json'):
+    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+service = build('gmail', 'v1', credentials=creds)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
