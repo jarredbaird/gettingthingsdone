@@ -30,7 +30,6 @@ if os.path.exists('token.json'):
     creds = Credentials(client_id=os.environ.get("google_client_id"), 
                         token_uri=os.environ.get("google_token_uri"), 
                         client_secret=os.environ.get("google_client_secret"))
-
 service = build('gmail', 'v1', credentials=creds)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
