@@ -34,7 +34,7 @@ parser = reqparse.RequestParser()
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
-app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgresql:///gtd')).replace("://", "ql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgresql:///gtd')).replace("s://", "sql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "echnidna_eggs")
@@ -118,7 +118,7 @@ class AppRandomItem(MethodResource, Resource):
 api.add_resource(AppItems, '/api/items/all')
 api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
-api.add_resource(GoogleAuth, 'api/google-auth/credentials')
+api.add_resource(GoogleAuth, '/api/google-auth/credentials')
 docs.register(AppItems)
 docs.register(AppItem)
 docs.register(AppRandomItem)
