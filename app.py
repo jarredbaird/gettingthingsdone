@@ -24,13 +24,13 @@ api = Api(app)
 parser = reqparse.RequestParser()
 
 # Set up gmail api auth and the api service
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-creds = None
-if os.path.exists('token.json'):
-    creds = Credentials(client_id=os.environ.get("google_client_id"), 
-                        token_uri=os.environ.get("google_token_uri"), 
-                        client_secret=os.environ.get("google_client_secret"))
-service = build('gmail', 'v1', credentials=creds)
+# SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+# creds = None
+# if os.path.exists('token.json'):
+#     creds = Credentials(client_id=os.environ.get("google_client_id"), 
+#                         token_uri=os.environ.get("google_token_uri"), 
+#                         client_secret=os.environ.get("google_client_secret"))
+# service = build('gmail', 'v1', credentials=creds)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
@@ -60,6 +60,10 @@ CURR_USER_KEY = "curr_user"
 @app.route('/')
 def home():
     return render_template('home.html')
+
+@app.route('/google451aa8ff7f9058a5.html')
+def google_verification():
+    return render_template('google451aa8ff7f9058a5.html')
 
 class AppItems(MethodResource, Resource):
     def get(self):
