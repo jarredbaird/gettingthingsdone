@@ -88,11 +88,11 @@ class GoogleAuth(MethodResource, Resource):
         db.session.add(user)
         db.session.commit()
         gmail_watch = await requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", 
-                                    data={
-                                            'topicName': "projects/taskpwner/topics/received-emails",
-                                            'labelIds': ["INBOX"],
-                                         })
-        return redirect('/')
+                                          data={
+                                                'topicName': "projects/taskpwner/topics/received-emails",
+                                                'labelIds': ["INBOX"],
+                                               })
+        return gmail_watch
 
 class AppItems(MethodResource, Resource):
     def get(self):
