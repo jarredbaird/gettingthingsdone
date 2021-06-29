@@ -45,12 +45,16 @@ class Item(db.Model):
 
 class User(db.Model):
     """User Model"""
-
     __tablename__ = "users"
     u_id = db.Column(db.Integer, primary_key=True)
-    active = db.Column(db.Boolean, nullable=False)
-    email = db.Column(db.Text, nullable=False)
-    u_name = db.Column(db.Text, nullable=False)
+    active = db.Column(db.Boolean)
+    email = db.Column(db.Text)
+    google_access_token = db.Column(db.Text)
+    google_token_type = db.Column(db.Text)
+    google_refresh_token = db.Column(db.Text)
+    google_expires_in = db.Column(db.Integer)
+    google_scope = db.Column(db.Text)
+    u_name = db.Column(db.Text)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Outcome(db.Model):

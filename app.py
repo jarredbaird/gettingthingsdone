@@ -1,8 +1,8 @@
 
-import pdb, json, os
-from models import db, connect_db, Item
+import pdb, json, os, requests, asyncio
+from models import db, connect_db, Item, User
 from schema import ItemRequest, ItemResponse
-from flask import Flask, render_template, request, flash, redirect, session, jsonify, g
+from flask import Flask, render_template, flash, redirect, session, jsonify, g
 from flask_apispec.annotations import use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import marshal_with, doc
@@ -24,13 +24,13 @@ api = Api(app)
 parser = reqparse.RequestParser()
 
 # Set up gmail api auth and the api service
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-creds = None
-if os.path.exists('token.json'):
-    creds = Credentials(client_id=os.environ.get("google_client_id"), 
-                        token_uri=os.environ.get("google_token_uri"), 
-                        client_secret=os.environ.get("google_client_secret"))
-service = build('gmail', 'v1', credentials=creds)
+# SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+# creds = None
+# if os.path.exists('token.json'):
+#     creds = Credentials(client_id=os.environ.get("google_client_id"), 
+#                         token_uri=os.environ.get("google_token_uri"), 
+#                         client_secret=os.environ.get("google_client_secret"))
+# service = build('gmail', 'v1', credentials=creds)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
@@ -60,6 +60,32 @@ CURR_USER_KEY = "curr_user"
 @app.route('/')
 def home():
     return render_template('home.html')
+
+@app.route('/google451aa8ff7f9058a5.html')
+def google_verification():
+    return render_template('google451aa8ff7f9058a5.html')
+
+@app.route("/google-auth")
+def googleAuth():
+    return redirect("https://accounts.google.com/o/oauth2/v2/auth")
+
+class GoogleAuth(MethodResource, Resource):
+    async def post(self, **kwargs):
+        parser.add_argument([*kwargs])
+        args = parser.parse_args()
+        user = User(google_access_token=args['access_token'],
+                    google_expires_in=args['expires_in'],
+                    google_token_type=int(args['token_type']),
+                    google_scope=args['scope'],
+                    google_refresh_token=args['refresh_token'])
+        db.session.add(user)
+        db.session.commit()
+        gmail_watch = await requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", 
+                                    data={
+                                            'topicName': "projects/taskpwner/topics/received-emails",
+                                            'labelIds': ["INBOX"],
+                                         })
+        return redirect('/')
 
 class AppItems(MethodResource, Resource):
     def get(self):
@@ -92,6 +118,7 @@ class AppRandomItem(MethodResource, Resource):
 api.add_resource(AppItems, '/api/items/all')
 api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
+api.add_resource(GoogleAuth, 'api/google-auth/credentials')
 docs.register(AppItems)
 docs.register(AppItem)
 docs.register(AppRandomItem)
