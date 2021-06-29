@@ -77,7 +77,7 @@ def googleAuth():
                    f"client_id={os.environ.get('google_client_id')}")
 
 class GoogleAuth(MethodResource, Resource):
-    async def post(self, **kwargs):
+    def get(self, **kwargs):
         parser.add_argument([*kwargs])
         args = parser.parse_args()
         user = User(google_access_token=args['access_token'],
@@ -87,12 +87,12 @@ class GoogleAuth(MethodResource, Resource):
                     google_refresh_token=args['refresh_token'])
         db.session.add(user)
         db.session.commit()
-        gmail_watch = await requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", 
-                                          data={
-                                                'topicName': "projects/taskpwner/topics/received-emails",
-                                                'labelIds': ["INBOX"],
-                                               })
-        return gmail_watch
+        requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", 
+                      data={
+                              'topicName': "projects/taskpwner/topics/received-emails",
+                              'labelIds': ["INBOX"],
+                           })
+        return redirect("/")
 
 class AppItems(MethodResource, Resource):
     def get(self):
