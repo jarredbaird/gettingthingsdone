@@ -67,7 +67,13 @@ def google_verification():
 
 @app.route("/google-auth")
 def googleAuth():
-    return redirect("https://accounts.google.com/o/oauth2/v2/auth")
+    scope = "https://www.googleapis.com/auth/gmail.readonly&"
+    access_type = "offline&"
+    include_granted_scopes = "true&"
+    response_type = "code&"
+    redirect_uri = "https://task-pwner.herokuapp.com/api/item/email-item/watch&"
+    client_id = os.environ.get("google_client_id")
+    return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?{scope+access_type+include_granted_scopes+response_type+redirect_uri+client_id}")
 
 class GoogleAuth(MethodResource, Resource):
     async def post(self, **kwargs):
@@ -118,7 +124,7 @@ class AppRandomItem(MethodResource, Resource):
 api.add_resource(AppItems, '/api/items/all')
 api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
-api.add_resource(GoogleAuth, '/api/google-auth/credentials')
+api.add_resource(GoogleAuth, '/api/item/email-item/watch')
 docs.register(AppItems)
 docs.register(AppItem)
 docs.register(AppRandomItem)
