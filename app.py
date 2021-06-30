@@ -2,7 +2,7 @@
 import pdb, json, os, requests, asyncio
 from models import db, connect_db, Item, User
 from schema import ItemRequest, ItemResponse
-from flask import Flask, render_template, flash, redirect, session, jsonify, g
+from flask import Flask, render_template, request, redirect, session, jsonify, g
 from flask_apispec.annotations import use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import marshal_with, doc
@@ -65,19 +65,33 @@ def home():
 def google_verification():
     return render_template('google451aa8ff7f9058a5.html')
 
-@app.route("/google-auth")
+@app.route("/googleoauth2callback")
 def googleAuth():
-    
-    return redirect("https://accounts.google.com/o/oauth2/v2/auth?" \
-                    "scope=https://www.googleapis.com/auth/gmail.readonly&" \
-                    "access_type=offline&" \
-                    "include_granted_scopes=true&" \
-                    "response_type=code&" \
-                    "redirect_uri=https://task-pwner.herokuapp.com/api/item/email-item/watch&" \
-                   f"client_id={os.environ.get('google_client_id')}")
+    if 'code' not in request.args:
+        return redirect("https://accounts.google.com/o/oauth2/v2/auth?" \
+                        "scope=https://www.googleapis.com/auth/gmail.readonly&" \
+                        "access_type=offline&" \
+                        "include_granted_scopes=true&" \
+                        "response_type=code&" \
+                        "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
+                       f"client_id={os.environ.get('google_client_id')}")
+    else:
+        auth_code = request.args.get('code')
+        data = {'code': auth_code,
+                'client_id': os.environ.get('google_client_id'),
+                'client_secret': os.environ.get('google_client_secret'),
+                'redirect_uri': "https://task-pwner.herokuapp.com/googleoauth2callback",
+                'grant_type': 'authorization_code'}
+        r = requests.post('https://oauth2.googleapis.com/token', data=data)
+        session['credentials'] = r.text
+        credentials = json.loads(flask.session['credentials'])
+        headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
+        w = requests.post('/api/item/email-item/watch', headers=headers)
+        print(w)
+        return redirect('/')
 
-class GoogleAuth(MethodResource, Resource):
-    def get(self, **kwargs):
+class UpdateUser(MethodResource, Resource):
+    def post(self, **kwargs):
         parser.add_argument([*kwargs])
         args = parser.parse_args()
         user = User(google_access_token=args['access_token'],
@@ -87,12 +101,18 @@ class GoogleAuth(MethodResource, Resource):
                     google_refresh_token=args['refresh_token'])
         db.session.add(user)
         db.session.commit()
-        requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", 
+        return user.serialize()
+        
+class EmailWatch(MethodResource, Resource):
+    def post(self, **kwargs):
+        parser.add_argument([*kwargs])
+        args = parser.parse_args()
+        r = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", 
                       data={
                               'topicName': "projects/taskpwner/topics/received-emails",
                               'labelIds': ["INBOX"],
                            })
-        return redirect("/")
+        return r.text
 
 class AppItems(MethodResource, Resource):
     def get(self):
@@ -125,7 +145,7 @@ class AppRandomItem(MethodResource, Resource):
 api.add_resource(AppItems, '/api/items/all')
 api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
-api.add_resource(GoogleAuth, '/api/item/email-item/watch')
+api.add_resource(EmailWatch, '/api/item/email-item/watch')
 docs.register(AppItems)
 docs.register(AppItem)
 docs.register(AppRandomItem)

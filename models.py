@@ -55,7 +55,20 @@ class User(db.Model):
     google_expires_in = db.Column(db.Integer)
     google_scope = db.Column(db.Text)
     u_name = db.Column(db.Text)
-    created_date = db.Column(db.DateTime, default=datetime.utcnow)
+    u_dt_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def serialize(self):
+        return {'u_id': self.u_id,
+                'active': self.active,
+                'email': self.email,
+                'google_access_token': self.google_access_token,
+                'google_token_type': self.google_token_type,
+                'google_refresh_token': self.google_refresh_token,
+                'google_expires_in': self.google_expires_in,
+                'google_scope': self.google_scope,
+                'u_name': self.u_name,
+                'u_dt_created': self.u_dt_created.isoformat()
+        }
 
 class Outcome(db.Model):
     """The outcome of a specific item"""
