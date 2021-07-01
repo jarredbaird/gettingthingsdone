@@ -64,8 +64,9 @@ def home():
 
 @app.route('/api/item/email-item/add', methods=['POST'])
 def addEmailItem():
-    subResponse = request.args.items()
+    subResponse = json.loads(request.data)
     print (subResponse)
+    pdb.set_trace()
     return 'OK', 200
 
 @app.route('/google451aa8ff7f9058a5.html')
