@@ -1,5 +1,5 @@
 
-import pdb, json, os, requests, asyncio
+import pdb, json, os, requests, asyncio, base64
 from marshmallow.fields import Email
 from models import db, connect_db, Item, User
 from schema import ItemRequest, ItemResponse
@@ -65,7 +65,10 @@ def home():
 @app.route('/api/item/email-item/add', methods=['POST'])
 def addEmailItem():
     subResponse = json.loads(request.data)
-    print (subResponse)
+    histIdByteLikeString = subResponse['message']['data']
+    histIdB64 = histIdByteLikeString.encode('utf-8')
+    histId = base64.b64decode(histIdB64).decode('utf-8')
+    print (histId)
     return 'OK', 200
 
 @app.route('/google451aa8ff7f9058a5.html')
