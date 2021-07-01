@@ -64,7 +64,7 @@ def home():
 
 @app.route('/api/item/email-item/add', methods=['POST'])
 def addEmailItem():
-    subResponse = request.args
+    subResponse = request.args.items()
     print (subResponse)
     return 'OK', 200
 
