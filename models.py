@@ -2,10 +2,12 @@
 
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 from random_item import createRandomTitle
 import pdb
 
 db = SQLAlchemy()
+bcrypt = Bcrypt()
 
 def connect_db(app):
     """Connecting db to provided Flask app."""
@@ -48,19 +50,24 @@ class User(db.Model):
     __tablename__ = "users"
     u_id = db.Column(db.Integer, primary_key=True)
     active = db.Column(db.Boolean)
-    email = db.Column(db.Text)
+    u_username = db.Column(db.Text, 
+                           nullable=False, 
+                           unique=True)
+    u_name = db.Column(db.Text)
+    password = db.Column(db.Text, 
+                         nullable=False)
+    u_dt_created = db.Column(db.DateTime, default=datetime.utcnow)
     google_access_token = db.Column(db.Text)
     google_token_type = db.Column(db.Text)
     google_refresh_token = db.Column(db.Text)
     google_expires_in = db.Column(db.Integer)
     google_scope = db.Column(db.Text)
-    u_name = db.Column(db.Text)
-    u_dt_created = db.Column(db.DateTime, default=datetime.utcnow)
+    google_history_id = db.Column(db.Integer)
 
     def serialize(self):
         return {'u_id': self.u_id,
                 'active': self.active,
-                'email': self.email,
+                'u_username': self.u_username,
                 'google_access_token': self.google_access_token,
                 'google_token_type': self.google_token_type,
                 'google_refresh_token': self.google_refresh_token,
@@ -69,6 +76,36 @@ class User(db.Model):
                 'u_name': self.u_name,
                 'u_dt_created': self.u_dt_created.isoformat()
         }
+
+    @classmethod
+    def register(cls, username, pwd):
+        """Register user w/hashed password & return user."""
+
+        user = User.query.filter_by(u_username=username).first()
+        if not user:
+            hashed = bcrypt.generate_password_hash(pwd)
+            # turn bytestring into normal (unicode utf8) string
+            hashed_utf8 = hashed.decode("utf8")
+
+            # return instance of user w/username and hashed pwd
+            return cls(u_username=username, password=hashed_utf8)
+        else:
+            return False
+
+    @classmethod
+    def authenticate(cls, username, pwd):
+        """Validate that user exists & password is correct.
+
+        Return user if valid; else return False.
+        """
+
+        u = User.query.filter_by(u_username=username).first()
+
+        if u and bcrypt.check_password_hash(u.password, pwd):
+            # return user instance
+            return u
+        else:
+            return False
 
 class Outcome(db.Model):
     """The outcome of a specific item"""

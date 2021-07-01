@@ -2,6 +2,7 @@
 import pdb, json, os, requests, asyncio, base64
 from marshmallow.fields import Email
 from models import db, connect_db, Item, User
+from forms import RegisterForm, LoginForm
 from schema import ItemRequest, ItemResponse
 from flask import Flask, render_template, request, redirect, session, jsonify, g
 from flask_apispec.annotations import use_kwargs
@@ -55,20 +56,54 @@ docs = FlaskApiSpec(app)
 # toolbar = DebugToolbarExtension(app)
 connect_db(app)
 
-CURR_USER_KEY = "curr_user"
-# account credentials
-
 @app.route('/')
 def home():
     return render_template('home.html')
 
+@app.route("/signup", methods=["POST"])
+def signup():
+    """Register user: produce form & handle form submission."""
+
+    response = json.loads(request.data)
+    name = response.get('username')
+    pwd = response.get('password')
+    user = User.register(name, pwd)
+    if user:
+        db.session.add(user)
+        db.session.commit()
+        session["user_id"] = user.u_id
+        return user.serialize()
+    else:
+        return jsonify({"message": "User Exists"})
+
+
+@app.route("/signin", methods=["POST"])
+def signin():
+    """Produce login form or handle login."""
+
+    response = json.loads(request.data)
+    name = response.get('username')
+    pwd = response.get('password')
+    user = User.authenticate(name, pwd)
+    if user:
+        session["user_id"] = user.u_id
+        return user.serialize()
+    else:
+        return jsonify({"message": "invalid user"})
+        
+@app.route("/logout", methods=["GET"])
+def logout():
+    session.pop("user_id")
+    return redirect('/')
+
 @app.route('/api/item/email-item/add', methods=['POST'])
 def addEmailItem():
     subResponse = json.loads(request.data)
-    histIdByteLikeString = subResponse['message']['data']
-    histIdB64 = histIdByteLikeString.encode('utf-8')
-    histId = base64.b64decode(histIdB64).decode('utf-8')
-    print (histId)
+    subPubDataByteLikeString = subResponse['message']['data']
+    subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
+    subPubData = base64.b64decode(subPubDataB64).decode('utf-8')
+    
+    print (subPubData['historyId'])
     return 'OK', 200
 
 @app.route('/google451aa8ff7f9058a5.html')
@@ -117,8 +152,12 @@ class UpdateUser(MethodResource, Resource):
 
 class AppItems(MethodResource, Resource):
     def get(self):
-        items = [item.serialize() for item in Item.query.all()]
+        items = [item.serialize() for item in Item.query.filter_by(u_id=session['user_id']).all()]
         return items
+
+class Session(MethodResource, Resource):
+    def get(self):
+        return session
 
 @doc(description="A means of accessing a single Item")
 @use_kwargs(ItemRequest, location=('json'))
@@ -128,7 +167,8 @@ class AppItem(MethodResource, Resource):
         parser.add_argument([*kwargs][0])
         args = parser.parse_args()
         item = Item(i_title=args['i_title'], 
-                    i_dt_created=datetime.now()
+                    i_dt_created=datetime.now(),
+                    u_id = session["user_id"]
                     )
         db.session.add(item)
         db.session.commit()
@@ -137,7 +177,8 @@ class AppItem(MethodResource, Resource):
 class AppRandomItem(MethodResource, Resource):
     def post(self):
         randomItem = Item(i_title=Item.generateRandomTitle(), 
-                        i_dt_created=datetime.now()
+                          i_dt_created=datetime.now(),
+                          u_id = session["user_id"]
                         )
         db.session.add(randomItem)
         db.session.commit()
@@ -146,6 +187,7 @@ class AppRandomItem(MethodResource, Resource):
 api.add_resource(AppItems, '/api/items/all')
 api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
+api.add_resource(Session, '/api/user')
 # api.add_resource(EmailWatch, '/api/item/email-item/watch')
 # docs.register(EmailWatch)
 docs.register(AppItems)

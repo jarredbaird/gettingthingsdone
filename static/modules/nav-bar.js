@@ -27,23 +27,29 @@ export class NavBar {
         $("<a>")
           .addClass("nav-link active")
           .attr("aria-current", "page")
-          .text("Home")
+          .text("Sign In")
       );
     this.$sampleItem2 = $("<li>")
       .addClass("nav-item")
       .append(
-        $("<a>").addClass("nav-link").attr("aria-current", "page").text("Link")
+        $("<a>")
+          .addClass("nav-link")
+          .attr("aria-current", "page")
+          .text("Sign Up")
       );
     this.$sampleItem3 = $("<li>")
       .addClass("nav-item")
       .append(
         $("<a>")
-          .addClass("nav-link disabled")
-          .attr({ "aria-disabled": "true", tabindex: "-1" })
-          .text("Disabled")
+          .addClass("nav-link")
+          .attr({ "aria-current": "page" })
+          .text("Logout")
+          .attr("id", "logout")
       );
     this.$menuItems = [this.$sampleItem1, this.$sampleItem2, this.$sampleItem3];
-    this.$subNavContainer = $("<div>").addClass("container p-4");
+    this.$subNavContainer = $("<div>")
+      .addClass("container p-4")
+      .attr("id", "subnav");
     this.$gridInit = $("<div>").addClass("row g-3").attr("id", "main-grid");
   }
 

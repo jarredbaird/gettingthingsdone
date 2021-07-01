@@ -16,8 +16,8 @@ export class InputBox {
     this.$submitBtn = $("<button>").addClass("btn btn-primary").text("Submit");
   }
 
-  makeInputBox($mama) {
-    $mama.append(
+  makeInputBox($container) {
+    $container.append(
       this.$inputForm.append(
         this.$inputCol.append(
           this.$inputGroup.append(
