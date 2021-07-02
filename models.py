@@ -57,6 +57,7 @@ class User(db.Model):
     password = db.Column(db.Text, 
                          nullable=False)
     u_dt_created = db.Column(db.DateTime, default=datetime.utcnow)
+    google_email_address = db.Column(db.Text, unique=True)
     google_access_token = db.Column(db.Text)
     google_token_type = db.Column(db.Text)
     google_refresh_token = db.Column(db.Text)

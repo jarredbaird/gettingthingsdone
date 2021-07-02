@@ -90,20 +90,28 @@ def logout():
 def addEmailItem():
     # get the request from the subscription to the email topic 
     subRequest = json.loads(request.data)
-    print(subRequest)
     # convert message.data from a b64-like string to a decoded string
     subPubDataByteLikeString = subRequest['message']['data']
     subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
     subPubData = base64.b64decode(subPubDataB64).decode('utf-8')
     # pull ONLY MESSAGED ADDED since the last stored history id
-    user = User.query.get(session['user_id'])
-    headers = {'Authorization': 'Bearer {}'.format(json.loads(session['credentials']['access_token']))}
+    # This means we'll need to get an access token by using a refresh token
+    user = User.query.filter_by(google_email_address=subPubData['emailAddress']).first()
+    data = {
+            'client_id': os.environ.get('google_client_id'),
+            'client_secret': os.environ.get('google_client_secret'),
+            'refresh_token': user.google_refresh_token,
+            'grant_type': 'refresh_token'}
+    r = requests.post('https://oauth2.googleapis.com/token', data=data)
+    headers = {'Authorization': 'Bearer {}'.format(r.data['access_token'])}
     params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
     history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
     email_id = history_response.data['history']['messages']['id']
     # email_thread_id = history_response.data['history']['messages']['threadId']
     email = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
-    print(email)
+    jsonFile = open("data.json", "w")
+    jsonFile.write(email.data)
+    jsonFile.close()
     # after the emails have been received, store the new history id
     user.google_history_id = subPubData['historyId']
     db.session.add(user)
@@ -140,7 +148,7 @@ def googleAuth():
                         "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
                        f"client_id={os.environ.get('google_client_id')}")
     else:
-        # if you got a pesky code from the oauth2 redirect params, turn that into an access token
+        # if you got a pesky auth code from the oauth2 redirect params, turn that into an access token
         auth_code = request.args.get('code')
         # All the good stuff you have to submit to google's oauth2 api
         data = {'code': auth_code,
@@ -152,7 +160,7 @@ def googleAuth():
         # aha! got it! let's save that access token to the session
         # Fyi to myself: saving to the session might not be necessary because the token
         # expires so quickly. Refresh token definitely needs to be saved to the db, however,
-        # that might not even need to be saved to the session because it is accessed so seldomly
+        # saving it to the session might not be necessary because it is accessed so seldomly
         session['credentials'] = r.text
         credentials = json.loads(session['credentials'])
         # get this user so we can modify it as needed
