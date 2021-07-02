@@ -8,8 +8,15 @@ import { SignInSignUp } from "./modules/signin-signup.js";
 
 let navBar = new NavBar();
 navBar.makeNavbar($("body"));
+
 $("#logout").on("click", async function () {
   await fetch("/logout");
+  $("#main-grid").empty();
+  await userFlow();
+});
+
+$("#gmail").on("click", async function () {
+  await fetch("/googleoauth2callback");
   $("#main-grid").empty();
   await userFlow();
 });

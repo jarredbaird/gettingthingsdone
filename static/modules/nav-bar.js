@@ -21,7 +21,7 @@ export class NavBar {
       .addClass(["collapse", "navbar-collapse"])
       .attr("id", "navbarToggler");
     this.$menuItemList = $("<ul>").addClass("navbar-nav me-auto mb-2 mb-lg-0");
-    this.$sampleItem1 = $("<li>")
+    this.$signin = $("<li>")
       .addClass("nav-item")
       .append(
         $("<a>")
@@ -29,7 +29,7 @@ export class NavBar {
           .attr("aria-current", "page")
           .text("Sign In")
       );
-    this.$sampleItem2 = $("<li>")
+    this.$signup = $("<li>")
       .addClass("nav-item")
       .append(
         $("<a>")
@@ -37,7 +37,7 @@ export class NavBar {
           .attr("aria-current", "page")
           .text("Sign Up")
       );
-    this.$sampleItem3 = $("<li>")
+    this.$logout = $("<li>")
       .addClass("nav-item")
       .append(
         $("<a>")
@@ -46,7 +46,21 @@ export class NavBar {
           .text("Logout")
           .attr("id", "logout")
       );
-    this.$menuItems = [this.$sampleItem1, this.$sampleItem2, this.$sampleItem3];
+    this.$connectToGmail = $("<li>")
+      .addClass("nav-item")
+      .append(
+        $("<a>")
+          .addClass("nav-link")
+          .attr({ "aria-current": "page" })
+          .text("Connect to Gmail")
+          .attr("id", "gmail")
+      );
+    this.$menuItems = [
+      this.$signin,
+      this.$signup,
+      this.$logout,
+      this.$connectToGmail,
+    ];
     this.$subNavContainer = $("<div>")
       .addClass("container p-4")
       .attr("id", "subnav");

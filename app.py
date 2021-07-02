@@ -1,8 +1,8 @@
 
-import pdb, json, os, requests, asyncio, base64
+import pdb, json, os, requests, base64
 from marshmallow.fields import Email
 from models import db, connect_db, Item, User
-from forms import RegisterForm, LoginForm
+from flask_socketio import SocketIO, emit
 from schema import ItemRequest, ItemResponse
 from flask import Flask, render_template, request, redirect, session, jsonify, g
 from flask_apispec.annotations import use_kwargs
@@ -24,18 +24,8 @@ from google.oauth2.credentials import Credentials
 app = Flask(__name__)
 api = Api(app)
 parser = reqparse.RequestParser()
+socketio = SocketIO(app, async_mode=None)
 
-# Set up gmail api auth and the api service
-# SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-# creds = None
-# if os.path.exists('token.json'):
-#     creds = Credentials(client_id=os.environ.get("google_client_id"), 
-#                         token_uri=os.environ.get("google_token_uri"), 
-#                         client_secret=os.environ.get("google_client_secret"))
-# service = build('gmail', 'v1', credentials=creds)
-
-# Get DB_URI from environ variable (useful for production/testing) or,
-# if not set there, use development local db.
 app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgresql:///gtd')).replace("s://", "sql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
@@ -53,7 +43,7 @@ app.config.update({
     'APISPEC_SWAGGER_UI_URL': '/swagger-ui/'  # URI to access UI of API Doc
 })
 docs = FlaskApiSpec(app)
-# toolbar = DebugToolbarExtension(app)
+
 connect_db(app)
 
 @app.route('/')
@@ -98,12 +88,18 @@ def logout():
 
 @app.route('/api/item/email-item/add', methods=['POST'])
 def addEmailItem():
-    subResponse = json.loads(request.data)
-    subPubDataByteLikeString = subResponse['message']['data']
+    # get the request from the subscription to the email topic 
+    subRequest = json.loads(request.data)
+    # convert message.data from a b64-like string to a decoded string
+    subPubDataByteLikeString = subRequest['message']['data']
     subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
     subPubData = base64.b64decode(subPubDataB64).decode('utf-8')
-    
-    print (subPubData['historyId'])
+    # pull ONLY MESSAGED ADDED since the last stored history id
+    emails = requests.get()
+    # after the emails have been received, store the new history id
+    user = User.query.get(session['user_id'])
+    response = requests.post(user.google_history_id)
+    subPubData['historyId']
     return 'OK', 200
 
 @app.route('/google451aa8ff7f9058a5.html')
@@ -119,14 +115,14 @@ def googleAuth():
                         "include_granted_scopes=true&" \
                         "response_type=code&" \
                         "prompt=consent&" \
-                        "redirect_uri=http://127.0.0.1:5000/googleoauth2callback&" \
+                        "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
                        f"client_id={os.environ.get('google_client_id')}")
     else:
         auth_code = request.args.get('code')
         data = {'code': auth_code,
                 'client_id': os.environ.get('google_client_id'),
                 'client_secret': os.environ.get('google_client_secret'),
-                'redirect_uri': "http://127.0.0.1:5000/googleoauth2callback",
+                'redirect_uri': "https://task-pwner.herokuapp.com/googleoauth2callback",
                 'grant_type': 'authorization_code'}
         r = requests.post('https://oauth2.googleapis.com/token', data=data)
         session['credentials'] = r.text
