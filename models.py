@@ -123,13 +123,14 @@ class EmailItem(db.Model):
     """all the parts of emails that come in"""
     __tablename__ = "email_items"
     ei_id = db.Column(db.Integer, primary_key=True)
-    sender = db.Column(db.Text, nullable=False)
-    send_to = db.Column(db.ARRAY(db.Text), nullable=False)
-    cc = db.Column(db.ARRAY(db.Text), nullable=False)
-    bcc = db.Column(db.ARRAY(db.Text), nullable=False)
+    sender = db.Column(db.Text)
+    send_to = db.Column(db.ARRAY(db.Text))
+    cc = db.Column(db.ARRAY(db.Text))
+    bcc = db.Column(db.ARRAY(db.Text))
     subject = db.Column(db.Text, nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    html = db.Column(db.Text, nullable=False)
+    body = db.Column(db.Text)
+    html = db.Column(db.Text)
+    thread_id = db.Column(db.Text)
 
 class NextAction(db.Model):
     """the next thing a user should be doing"""

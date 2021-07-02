@@ -95,11 +95,18 @@ def addEmailItem():
     subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
     subPubData = base64.b64decode(subPubDataB64).decode('utf-8')
     # pull ONLY MESSAGED ADDED since the last stored history id
-    emails = requests.get()
-    # after the emails have been received, store the new history id
     user = User.query.get(session['user_id'])
-    response = requests.post(user.google_history_id)
-    subPubData['historyId']
+    headers = {'Authorization': 'Bearer {}'.format(json.loads(session['credentials']['access_token']))}
+    params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
+    history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
+    email_id = history_response.data['history']['messages']['id']
+    # email_thread_id = history_response.data['history']['messages']['threadId']
+    email = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
+    print(email)
+    # after the emails have been received, store the new history id
+    user.google_history_id = subPubData['historyId']
+    db.session.add(user)
+    db.session.commit()
     return 'OK', 200
 
 @app.route('/google451aa8ff7f9058a5.html')
@@ -108,7 +115,21 @@ def google_verification():
 
 @app.route("/googleoauth2callback")
 def googleAuth():
+    ''' 
+    get the gosh-darned google access token 
+    and create a watch on the received emails subscription 
+    here, we're only gonna grant ourselves access  
+    to a read-only scope on the user's gmail account.
+    We're also going to request offline access so that we can get a refresh token
+    The refresh token will be needed to renew the watch subscription, as the 
+    watch subscription authorization persists only for 7 dayz
+    '''
+
     if 'code' not in request.args:
+        # Keep trying until we get a 'code' in redirect params. That's gonna be
+        # converted into an access token. The access token expires within seconds...
+        # ...but that's ok. We only need it long enough to set a watch on a 
+        # sub/pub subscription
         return redirect("https://accounts.google.com/o/oauth2/v2/auth?" \
                         "scope=https://www.googleapis.com/auth/gmail.readonly&" \
                         "access_type=offline&" \
@@ -118,19 +139,31 @@ def googleAuth():
                         "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
                        f"client_id={os.environ.get('google_client_id')}")
     else:
+        # if you got a pesky code from the oauth2 redirect params, turn that into an access token
         auth_code = request.args.get('code')
+        # All the good stuff you have to submit to google's oauth2 api
         data = {'code': auth_code,
                 'client_id': os.environ.get('google_client_id'),
                 'client_secret': os.environ.get('google_client_secret'),
                 'redirect_uri': "https://task-pwner.herokuapp.com/googleoauth2callback",
                 'grant_type': 'authorization_code'}
         r = requests.post('https://oauth2.googleapis.com/token', data=data)
+        # aha! got it! let's save that access token to the session
+        # Fyi to myself: saving to the session might not be necessary because the token
+        # expires so quickly. Refresh token definitely needs to be saved to the db, however,
+        # that might not even need to be saved to the session because it is accessed so seldomly
         session['credentials'] = r.text
         credentials = json.loads(session['credentials'])
+        # get this user so we can modify it as needed
+        user = User.query.get(session['user_id'])
+        user.google_access_token = credentials['access_token']
+        user.google_refresh_token = credentials['refresh_token']
         headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
         watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
         w = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
-        print(w)
+        user.google_history_id = w.data['historyId']
+        db.session.add(user)
+        db.session.commit()
         return redirect('/')
 
 class UpdateUser(MethodResource, Resource):
