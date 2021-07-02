@@ -106,7 +106,7 @@ def addEmailItem():
     # email_thread_id = history_response.data['history']['messages']['threadId']
     email = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
     jsonFile = open("data.json", "w")
-    jsonFile.write(json.loads(email.text))
+    jsonFile.write(email.text)
     jsonFile.close()
     # after the emails have been received, store the new history id
     user.google_history_id = subPubData['historyId']
