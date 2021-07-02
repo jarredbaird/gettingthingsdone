@@ -97,15 +97,15 @@ def addEmailItem():
             'refresh_token': user.google_refresh_token,
             'grant_type': 'refresh_token'}
     r = requests.post('https://oauth2.googleapis.com/token', data=data)
-    print(r)
-    headers = {'Authorization': 'Bearer {}'.format(r.data['access_token'])}
+    accessJson = json.loads(r.text)
+    headers = {'Authorization': 'Bearer {}'.format(accessJson['access_token'])}
     params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
     history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
-    email_id = history_response.data['history']['messages']['id']
+    email_id = json.loads(history_response.text)['history']['messages']['id']
     # email_thread_id = history_response.data['history']['messages']['threadId']
     email = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
     jsonFile = open("data.json", "w")
-    jsonFile.write(email.data)
+    jsonFile.write(json.loads(email.text))
     jsonFile.close()
     # after the emails have been received, store the new history id
     user.google_history_id = subPubData['historyId']
@@ -163,10 +163,13 @@ def googleAuth():
         user.google_refresh_token = credentials['refresh_token']
         headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
         watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
-        w = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
-        print(w)
-        user.google_history_id = w.data['historyId']
-        user.google_email_address = w.data['emailAddress']
+        watchResponse = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
+        userResponse = requests.get("https://gmail.googleapis.com/gmail/v1/users/me/profile", headers=headers)
+        userJson = json.loads(userResponse.text)
+        watchJson = json.loads(watchResponse.text)
+        user.google_history_id = watchJson['historyId']
+        user.google_email_address = userJson['emailAddress']
+        pdb.set_trace()
         db.session.add(user)
         db.session.commit()
         return redirect('/')
