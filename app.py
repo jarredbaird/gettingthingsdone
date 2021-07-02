@@ -90,6 +90,7 @@ def logout():
 def addEmailItem():
     # get the request from the subscription to the email topic 
     subRequest = json.loads(request.data)
+    print(subRequest)
     # convert message.data from a b64-like string to a decoded string
     subPubDataByteLikeString = subRequest['message']['data']
     subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
