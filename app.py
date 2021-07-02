@@ -4,7 +4,7 @@ from marshmallow.fields import Email
 from models import db, connect_db, Item, User
 from flask_socketio import SocketIO, emit
 from schema import ItemRequest, ItemResponse
-from flask import Flask, render_template, request, redirect, session, jsonify, g
+from flask import Flask, render_template, request, redirect, session, jsonify
 from flask_apispec.annotations import use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import marshal_with, doc
@@ -12,13 +12,7 @@ from flask_apispec.views import MethodResource
 from flask_restful import reqparse, Api, Resource
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
-from sqlalchemy.exc import IntegrityError
-# from flask_debugtoolbar import DebugToolbarExtension
 from datetime import datetime
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 
 # Set up the app, api, and request parser
 app = Flask(__name__)
@@ -162,8 +156,7 @@ def googleAuth():
         # Fyi to myself: saving to the session might not be necessary because the token
         # expires so quickly. Refresh token definitely needs to be saved to the db, however,
         # saving it to the session might not be necessary because it is accessed so seldomly
-        session['credentials'] = r.text
-        credentials = json.loads(session['credentials'])
+        credentials = json.loads(r.text)
         # get this user so we can modify it as needed
         user = User.query.get(session['user_id'])
         user.google_access_token = credentials['access_token']
