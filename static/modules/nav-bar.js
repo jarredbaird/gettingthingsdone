@@ -53,7 +53,7 @@ export class NavBar {
           .addClass("nav-link")
           .attr({ "aria-current": "page" })
           .text("Connect to Gmail")
-          .attr("id", "gmail")
+          .attr({ id: "gmail", href: "/googleoauth2callback" })
       );
     this.$menuItems = [
       this.$signin,

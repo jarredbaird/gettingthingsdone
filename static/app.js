@@ -15,12 +15,6 @@ $("#logout").on("click", async function () {
   await userFlow();
 });
 
-$("#gmail").on("click", async function () {
-  await fetch("/googleoauth2callback");
-  $("#main-grid").empty();
-  await userFlow();
-});
-
 await userFlow();
 
 async function userFlow() {
