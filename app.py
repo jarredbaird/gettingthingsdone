@@ -169,7 +169,6 @@ def googleAuth():
         watchJson = json.loads(watchResponse.text)
         user.google_history_id = watchJson['historyId']
         user.google_email_address = userJson['emailAddress']
-        pdb.set_trace()
         db.session.add(user)
         db.session.commit()
         return redirect('/')
