@@ -171,6 +171,7 @@ def googleAuth():
         watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
         w = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
         user.google_history_id = w.data['historyId']
+        user.google_email_address = w.data['emailAddress']
         db.session.add(user)
         db.session.commit()
         return redirect('/')
