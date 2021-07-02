@@ -103,6 +103,7 @@ def addEmailItem():
             'refresh_token': user.google_refresh_token,
             'grant_type': 'refresh_token'}
     r = requests.post('https://oauth2.googleapis.com/token', data=data)
+    print(r)
     headers = {'Authorization': 'Bearer {}'.format(r.data['access_token'])}
     params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
     history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
@@ -170,6 +171,7 @@ def googleAuth():
         headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
         watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
         w = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
+        print(w)
         user.google_history_id = w.data['historyId']
         user.google_email_address = w.data['emailAddress']
         db.session.add(user)

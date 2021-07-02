@@ -5,6 +5,7 @@ db.drop_all()
 db.create_all()
 
 u1 = User.register("jarredbaird@gmail.com", "jarred")
+u1.google_email_address = "jarredbaird@gmail.com"
 u2 = User.register("eviluser@gmail.com", "evilpassword")
 db.session.add_all([u1, u2])
 db.session.commit()
