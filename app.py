@@ -102,8 +102,7 @@ def addEmailItem():
     params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
     history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
     email_json = json.loads(history_response.text)
-    print(email_json)
-    email_id = email_json['history']['messages']['id']
+    email_id = email_json['history'][0]['messages'][0]['id']
     # email_thread_id = history_response.data['history']['messages']['threadId']
     email = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
     jsonFile = open("data.json", "w")
