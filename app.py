@@ -93,7 +93,7 @@ def addEmailItem():
     # convert message.data from a b64-like string to a decoded string
     subPubDataByteLikeString = subRequest['message']['data']
     subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
-    subPubData = base64.b64decode(subPubDataB64).decode('utf-8')
+    subPubData = json.loads(base64.b64decode(subPubDataB64).decode('utf-8'))
     # pull ONLY MESSAGED ADDED since the last stored history id
     # This means we'll need to get an access token by using a refresh token
     user = User.query.filter_by(google_email_address=subPubData['emailAddress']).first()
