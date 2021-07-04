@@ -104,9 +104,14 @@ def addEmailItem():
     email_json = json.loads(history_response.text)
     email_id = email_json['history'][0]['messages'][0]['id']
     # email_thread_id = history_response.data['history']['messages']['threadId']
-    email = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
-    with open("email.json", "r") as fo:
-        fo.write(email.text)
+    email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
+    email = json.loads(email_response)
+    for header in email['payload']['headers']:
+        if header['name'].lower() == 'subject':
+            item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
+            db.session.add(item)
+            db.session.commit()
+            break
     # after the emails have been received, store the new history id
     user.google_history_id = subPubData['historyId']
     db.session.add(user)
