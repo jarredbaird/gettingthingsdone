@@ -105,7 +105,7 @@ def addEmailItem():
     email_id = email_json['history'][0]['messages'][0]['id']
     # email_thread_id = history_response.data['history']['messages']['threadId']
     email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
-    email = json.loads(email_response)
+    email = json.loads(email_response.text)
     for header in email['payload']['headers']:
         if header['name'].lower() == 'subject':
             item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
