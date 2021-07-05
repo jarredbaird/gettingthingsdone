@@ -122,61 +122,64 @@ def addEmailItem():
 def google_verification():
     return render_template('google451aa8ff7f9058a5.html')
 
-@app.route("/googleoauth2callback")
-def googleAuth():
-    ''' 
-    get the gosh-darned google access token 
-    and create a watch on the received emails subscription 
-    here, we're only gonna grant ourselves access  
-    to a read-only scope on the user's gmail account.
-    We're also going to request offline access so that we can get a refresh token
-    The refresh token will be needed to renew the watch subscription, as the 
-    watch subscription authorization persists only for 7 dayz
-    '''
 
-    if 'code' not in request.args:
-        # Keep trying until we get a 'code' in redirect params. That's gonna be
-        # converted into an access token. The access token expires within seconds...
-        # ...but that's ok. We only need it long enough to set a watch on a 
-        # sub/pub subscription
-        return redirect("https://accounts.google.com/o/oauth2/v2/auth?" \
-                        "scope=https://www.googleapis.com/auth/gmail.readonly&" \
-                        "access_type=offline&" \
-                        "include_granted_scopes=true&" \
-                        "response_type=code&" \
-                        "prompt=consent&" \
-                        "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
-                       f"client_id={os.environ.get('google_client_id')}")
-    else:
-        # if you got a pesky auth code from the oauth2 redirect params, turn that into an access token
-        auth_code = request.args.get('code')
-        # All the good stuff you have to submit to google's oauth2 api
-        data = {'code': auth_code,
-                'client_id': os.environ.get('google_client_id'),
-                'client_secret': os.environ.get('google_client_secret'),
-                'redirect_uri': "https://task-pwner.herokuapp.com/googleoauth2callback",
-                'grant_type': 'authorization_code'}
-        r = requests.post('https://oauth2.googleapis.com/token', data=data)
-        # aha! got it! let's save that access token to the session
-        # Fyi to myself: saving to the session might not be necessary because the token
-        # expires so quickly. Refresh token definitely needs to be saved to the db, however,
-        # saving it to the session might not be necessary because it is accessed so seldomly
-        credentials = json.loads(r.text)
-        # get this user so we can modify it as needed
-        user = User.query.get(session['user_id'])
-        user.google_access_token = credentials['access_token']
-        user.google_refresh_token = credentials['refresh_token']
-        headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
-        watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
-        watchResponse = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
-        userResponse = requests.get("https://gmail.googleapis.com/gmail/v1/users/me/profile", headers=headers)
-        userJson = json.loads(userResponse.text)
-        watchJson = json.loads(watchResponse.text)
-        user.google_history_id = watchJson['historyId']
-        user.google_email_address = userJson['emailAddress']
-        db.session.add(user)
-        db.session.commit()
-        return redirect('/')
+class GoogleAuth(MethodResource, Resource):
+    def get(self):
+# @app.route("/googleoauth2callback")
+# def googleAuth():
+        ''' 
+        get the gosh-darned google access token 
+        and create a watch on the received emails subscription 
+        here, we're only gonna grant ourselves access  
+        to a read-only scope on the user's gmail account.
+        We're also going to request offline access so that we can get a refresh token
+        The refresh token will be needed to renew the watch subscription, as the 
+        watch subscription authorization persists only for 7 dayz
+        '''
+
+        if 'code' not in request.args:
+            # Keep trying until we get a 'code' in redirect params. That's gonna be
+            # converted into an access token. The access token expires within seconds...
+            # ...but that's ok. We only need it long enough to set a watch on a 
+            # sub/pub subscription
+            return redirect("https://accounts.google.com/o/oauth2/v2/auth?" \
+                            "scope=https://www.googleapis.com/auth/gmail.readonly&" \
+                            "access_type=offline&" \
+                            "include_granted_scopes=true&" \
+                            "response_type=code&" \
+                            "prompt=consent&" \
+                            "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
+                        f"client_id={os.environ.get('google_client_id')}")
+        else:
+            # if you got a pesky auth code from the oauth2 redirect params, turn that into an access token
+            auth_code = request.args.get('code')
+            # All the good stuff you have to submit to google's oauth2 api
+            data = {'code': auth_code,
+                    'client_id': os.environ.get('google_client_id'),
+                    'client_secret': os.environ.get('google_client_secret'),
+                    'redirect_uri': "https://task-pwner.herokuapp.com/googleoauth2callback",
+                    'grant_type': 'authorization_code'}
+            r = requests.post('https://oauth2.googleapis.com/token', data=data)
+            # aha! got it! let's save that access token to the session
+            # Fyi to myself: saving to the session might not be necessary because the token
+            # expires so quickly. Refresh token definitely needs to be saved to the db, however,
+            # saving it to the session might not be necessary because it is accessed so seldomly
+            credentials = json.loads(r.text)
+            # get this user so we can modify it as needed
+            user = User.query.get(session['user_id'])
+            user.google_access_token = credentials['access_token']
+            user.google_refresh_token = credentials['refresh_token']
+            headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
+            watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
+            watchResponse = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
+            userResponse = requests.get("https://gmail.googleapis.com/gmail/v1/users/me/profile", headers=headers)
+            userJson = json.loads(userResponse.text)
+            watchJson = json.loads(watchResponse.text)
+            user.google_history_id = watchJson['historyId']
+            user.google_email_address = userJson['emailAddress']
+            db.session.add(user)
+            db.session.commit()
+            return redirect('/')
 
 class UpdateUser(MethodResource, Resource):
     def post(self, **kwargs):
@@ -229,6 +232,7 @@ api.add_resource(AppItems, '/api/items/all')
 api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
 api.add_resource(Session, '/api/user')
+api.add_resource(GoogleAuth, "/googleoauth2callback")
 # api.add_resource(EmailWatch, '/api/item/email-item/watch')
 # docs.register(EmailWatch)
 docs.register(AppItems)
