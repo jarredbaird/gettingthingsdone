@@ -1,5 +1,5 @@
 
-import pdb, json, os, requests, base64
+import pdb, json, os, requests, base64, eventlet
 from marshmallow.fields import Email
 from models import db, connect_db, Item, User
 from flask_socketio import SocketIO, emit
@@ -18,9 +18,9 @@ from datetime import datetime
 app = Flask(__name__)
 api = Api(app)
 parser = reqparse.RequestParser()
-socketio = SocketIO(app, async_mode=None)
+socketio = SocketIO(app, async_mode='eventlet')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgresql:///gtd')).replace("s://", "sql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgres:///gtd')).replace("s://", "sql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "echnidna_eggs")
@@ -111,12 +111,24 @@ def addEmailItem():
             item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
             db.session.add(item)
             db.session.commit()
+            socketio.emit('my_response', item.serialize())
             break
     # after the emails have been received, store the new history id
     user.google_history_id = subPubData['historyId']
     db.session.add(user)
     db.session.commit()
     return 'OK', 200
+
+@socketio.on('my_response')
+def emitNewItem(item):
+    data = {'data': {
+                'i_title': item['i_title'], 
+                'i_dt_created': item['i_dt_created'].isoformat()
+                }
+            }
+    print(data)
+    emit('my_response', data)
+
 
 @app.route('/google451aa8ff7f9058a5.html')
 def google_verification():
@@ -148,7 +160,7 @@ class GoogleAuth(MethodResource, Resource):
                             "include_granted_scopes=true&" \
                             "response_type=code&" \
                             "prompt=consent&" \
-                            "redirect_uri=https://task-pwner.herokuapp.com/googleoauth2callback&" \
+                            "redirect_uri=https://gtd.ngrok.io/googleoauth2callback&" \
                         f"client_id={os.environ.get('google_client_id')}")
         else:
             # if you got a pesky auth code from the oauth2 redirect params, turn that into an access token
@@ -157,17 +169,13 @@ class GoogleAuth(MethodResource, Resource):
             data = {'code': auth_code,
                     'client_id': os.environ.get('google_client_id'),
                     'client_secret': os.environ.get('google_client_secret'),
-                    'redirect_uri': "https://task-pwner.herokuapp.com/googleoauth2callback",
+                    'redirect_uri': "https://gtd.ngrok.io/googleoauth2callback",
                     'grant_type': 'authorization_code'}
             r = requests.post('https://oauth2.googleapis.com/token', data=data)
-            # aha! got it! let's save that access token to the session
-            # Fyi to myself: saving to the session might not be necessary because the token
-            # expires so quickly. Refresh token definitely needs to be saved to the db, however,
-            # saving it to the session might not be necessary because it is accessed so seldomly
+            # aha! got it! let's save that refresh token to the db
             credentials = json.loads(r.text)
             # get this user so we can modify it as needed
             user = User.query.get(session['user_id'])
-            user.google_access_token = credentials['access_token']
             user.google_refresh_token = credentials['refresh_token']
             headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
             watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
@@ -238,3 +246,6 @@ api.add_resource(GoogleAuth, "/googleoauth2callback")
 docs.register(AppItems)
 docs.register(AppItem)
 docs.register(AppRandomItem)
+
+if __name__ == "__main__":
+    socketio.run(app)

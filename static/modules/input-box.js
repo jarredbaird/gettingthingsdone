@@ -6,7 +6,7 @@ export class InputBox {
     this.$inputGroup = $("<div>").addClass("input-group input-group-lg");
     this.$randBtn = $("<a>")
       .addClass("btn btn-warning btn-lg")
-      .text("Go ahead, make my day");
+      .text("Need something to do?");
     this.$fieldDescr = $("<span>")
       .addClass("input-group-text")
       .text("Your Task");

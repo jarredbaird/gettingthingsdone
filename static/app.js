@@ -17,6 +17,14 @@ $("#logout").on("click", async function () {
 
 await userFlow();
 
+let socket = io();
+socket.on("my_response", function (msg, cb) {
+  let nonDOMitem = new ListGroupItem(msg);
+  console.log(nonDOMitem.makeItem());
+  $("#inbox-list").prepend(nonDOMitem.makeItem());
+  if (cb) cb();
+});
+
 async function userFlow() {
   let userSession = await getSession();
   if (userSession) {
