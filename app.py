@@ -18,7 +18,7 @@ from datetime import datetime
 app = Flask(__name__)
 api = Api(app)
 parser = reqparse.RequestParser()
-socketio = SocketIO(app, async_mode='eventlet')
+socketio = SocketIO(app, async_mode='eventlet', logger=True, engineio_logger=True)     
 
 app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgres:///gtd')).replace("s://", "sql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -102,17 +102,22 @@ def addEmailItem():
     params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
     history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
     email_json = json.loads(history_response.text)
-    email_id = email_json['history'][0]['messages'][0]['id']
-    # email_thread_id = history_response.data['history']['messages']['threadId']
-    email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
-    email = json.loads(email_response.text)
-    for header in email['payload']['headers']:
-        if header['name'].lower() == 'subject':
-            item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
-            db.session.add(item)
-            db.session.commit()
-            socketio.emit('my_response', item.serialize())
-            break
+    if email_json.get('history'):
+        email_id = email_json['history'][0]['messages'][0]['id']
+        # email_thread_id = history_response.data['history']['messages']['threadId']
+        email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
+        email = json.loads(email_response.text)
+        print(email)
+        for header in email['payload']['headers']:
+            if header['name'].lower() == 'subject':
+                item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
+                db.session.add(item)
+                db.session.commit()
+                if item.u_id == session.get('user_id'):
+                    socketio.emit('my_response', item.serialize())
+                break
+    else:
+        print('no history id')
     # after the emails have been received, store the new history id
     user.google_history_id = subPubData['historyId']
     db.session.add(user)
@@ -209,7 +214,8 @@ class AppItems(MethodResource, Resource):
 
 class Session(MethodResource, Resource):
     def get(self):
-        return session
+        print(session.items())
+        return json.dumps(session.get('user_id'))
 
 @doc(description="A means of accessing a single Item")
 @use_kwargs(ItemRequest, location=('json'))
