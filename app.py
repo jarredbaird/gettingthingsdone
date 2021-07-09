@@ -1,5 +1,6 @@
 
 import pdb, json, os, requests, base64, eventlet
+from helpers import subPub
 from marshmallow.fields import Email
 from models import db, connect_db, Item, User
 from flask_socketio import SocketIO, emit
@@ -10,20 +11,29 @@ from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import marshal_with, doc
 from flask_apispec.views import MethodResource
 from flask_restful import reqparse, Api, Resource
+from flask_session import Session
+from flask_debugtoolbar import DebugToolbarExtension
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from datetime import datetime
 
-# Set up the app, api, and request parser
+# Set up the app
 app = Flask(__name__)
-api = Api(app)
-parser = reqparse.RequestParser()
-socketio = SocketIO(app, async_mode='eventlet', logger=True, engineio_logger=True)     
 
+# config the app
 app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgres:///gtd')).replace("s://", "sql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
+app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "echnidna_eggs")
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
+
+# set up the api, request parser, and debugtoolbar
+api = Api(app)
+parser = reqparse.RequestParser()
+socketio = SocketIO(app, manage_session=False, async_mode='eventlet', logger=True, engineio_logger=True)
+Session(app)
+debug = DebugToolbarExtension(app)   
 
 # Create an APISpec
 app.config.update({
@@ -42,6 +52,7 @@ connect_db(app)
 
 @app.route('/')
 def home():
+    print(f"**************** Home page: {session.get('user_id')} and {session.items()} **********")
     return render_template('home.html')
 
 @app.route("/signup", methods=["POST"])
@@ -65,6 +76,7 @@ def signup():
 def signin():
     """Produce login form or handle login."""
 
+    print(f"**************** Login: {session.get('user_id')} and {session.items()} **********")
     response = json.loads(request.data)
     name = response.get('username')
     pwd = response.get('password')
@@ -78,16 +90,14 @@ def signin():
 @app.route("/logout", methods=["GET"])
 def logout():
     session.pop("user_id")
-    return redirect('/')
+    return jsonify({'message': 'logout successful'})
 
 @app.route('/api/item/email-item/add', methods=['POST'])
 def addEmailItem():
+    print(f"**************** Add email item: {session.get('user_id')} and {session.items()} **********")
     # get the request from the subscription to the email topic 
-    subRequest = json.loads(request.data)
-    # convert message.data from a b64-like string to a decoded string
-    subPubDataByteLikeString = subRequest['message']['data']
-    subPubDataB64 = subPubDataByteLikeString.encode('utf-8')
-    subPubData = json.loads(base64.b64decode(subPubDataB64).decode('utf-8'))
+    subPubData = subPub(request.data)
+    print(subPubData)
     # pull ONLY MESSAGED ADDED since the last stored history id
     # This means we'll need to get an access token by using a refresh token
     user = User.query.filter_by(google_email_address=subPubData['emailAddress']).first()
@@ -107,13 +117,12 @@ def addEmailItem():
         # email_thread_id = history_response.data['history']['messages']['threadId']
         email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
         email = json.loads(email_response.text)
-        print(email)
         for header in email['payload']['headers']:
             if header['name'].lower() == 'subject':
                 item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
                 db.session.add(item)
                 db.session.commit()
-                if item.u_id == session.get('user_id'):
+                if item.u_id == session.get("user_id"):
                     socketio.emit('my_response', item.serialize())
                 break
     else:
@@ -142,8 +151,6 @@ def google_verification():
 
 class GoogleAuth(MethodResource, Resource):
     def get(self):
-# @app.route("/googleoauth2callback")
-# def googleAuth():
         ''' 
         get the gosh-darned google access token 
         and create a watch on the received emails subscription 
@@ -165,7 +172,7 @@ class GoogleAuth(MethodResource, Resource):
                             "include_granted_scopes=true&" \
                             "response_type=code&" \
                             "prompt=consent&" \
-                            "redirect_uri=https://gtd.ngrok.io/googleoauth2callback&" \
+                            "redirect_uri=https://task-pwner.ngrok.io/googleoauth2callback&" \
                         f"client_id={os.environ.get('google_client_id')}")
         else:
             # if you got a pesky auth code from the oauth2 redirect params, turn that into an access token
@@ -174,7 +181,7 @@ class GoogleAuth(MethodResource, Resource):
             data = {'code': auth_code,
                     'client_id': os.environ.get('google_client_id'),
                     'client_secret': os.environ.get('google_client_secret'),
-                    'redirect_uri': "https://gtd.ngrok.io/googleoauth2callback",
+                    'redirect_uri': "https://task-pwner.ngrok.io/googleoauth2callback",
                     'grant_type': 'authorization_code'}
             r = requests.post('https://oauth2.googleapis.com/token', data=data)
             # aha! got it! let's save that refresh token to the db
@@ -209,12 +216,13 @@ class UpdateUser(MethodResource, Resource):
 
 class AppItems(MethodResource, Resource):
     def get(self):
+        print(f"**************** Get all items: {session.get('user_id')} and {session.items()} **********")
         items = [item.serialize() for item in Item.query.filter_by(u_id=session['user_id']).all()]
         return items
 
 class Session(MethodResource, Resource):
     def get(self):
-        print(session.items())
+        print(f"**************** Get the session: {session.get('user_id')} and {session.items()} **********")
         return json.dumps(session.get('user_id'))
 
 @doc(description="A means of accessing a single Item")

@@ -9,12 +9,6 @@ import { SignInSignUp } from "./modules/signin-signup.js";
 let navBar = new NavBar();
 navBar.makeNavbar($("body"));
 
-$("#logout").on("click", async function () {
-  await fetch("/logout");
-  $("#main-grid").empty();
-  await userFlow();
-});
-
 await userFlow();
 
 let socket = io();
@@ -65,7 +59,6 @@ async function userFlow() {
                       $("#username").val(),
                       $("#password").val()
                     );
-                    debugger;
                     if (!response.message) {
                       $("#main-grid").empty();
                       await showUserInbox();
@@ -118,6 +111,13 @@ async function userFlow() {
               )
           )
       );
+    });
+    buttons.$signInBtn.on("click", async function () {
+      let logout = await fetch("/logout").then((response) => {
+        response.json;
+      });
+      $("#main-grid").empty();
+      await userFlow();
     });
   }
 }
