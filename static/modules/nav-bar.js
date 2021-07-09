@@ -7,7 +7,10 @@ export class NavBar {
       "bg-primary",
     ]);
     this.$barContainer = $("<div>").addClass("container").attr("id", "main");
-    this.$brand = $("<a>").addClass("navbar-brand").text("Getting Things Done");
+    this.$brand = $("<a>")
+      .addClass("navbar-brand")
+      .text("Getting Things Done")
+      .attr("href", "/");
     this.$toggler = $("button").addClass("navbar-toggler").attr({
       type: "button",
       "data-bs-toggle": "collapse",
