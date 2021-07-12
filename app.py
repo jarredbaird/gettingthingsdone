@@ -3,9 +3,10 @@ import pdb, json, os, requests, base64, eventlet
 from helpers import subPub
 from marshmallow.fields import Email
 from models import db, connect_db, Item, User
-from flask_socketio import SocketIO, emit
 from schema import ItemRequest, ItemResponse
 from flask import Flask, render_template, request, redirect, session, jsonify
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 from flask_apispec.annotations import use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from flask_apispec import marshal_with, doc
@@ -24,16 +25,19 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get('DATABASE_URL', 'postgres:///gtd')).replace("s://", "sql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = db
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "echnidna_eggs")
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 # set up the api, request parser, and debugtoolbar
+cors = CORS(app, resources={"/api/item/email-item/add": {"origins": "*"}})
 api = Api(app)
 parser = reqparse.RequestParser()
 socketio = SocketIO(app, manage_session=False, async_mode='eventlet', logger=True, engineio_logger=True)
 Session(app)
-debug = DebugToolbarExtension(app)   
+connected_clients = {}
+debug = DebugToolbarExtension(app)
 
 # Create an APISpec
 app.config.update({
@@ -55,93 +59,122 @@ def home():
     print(f"**************** Home page: {session.get('user_id')} and {session.items()} **********")
     return render_template('home.html')
 
-@app.route("/signup", methods=["POST"])
-def signup():
-    """Register user: produce form & handle form submission."""
+class Session (MethodResource, Resource):
+    def post(self):
+        ''' Handle signin/signup. '''
+        print(f"**************** Login: {session.get('user_id')} and {session.items()} **********")
 
-    response = json.loads(request.data)
-    name = response.get('username')
-    pwd = response.get('password')
-    user = User.register(name, pwd)
-    if user:
+        args = json.loads(request.data)
+        name = args.get('username')
+        pwd = args.get('password')
+        if args.get('type') == 'signin':
+            user = User.authenticate(name, pwd)
+        else:
+            user = User.register(name, pwd)
+        if user:
+            session["user_id"] = user.u_id
+            session["google_email_address"] = user.google_email_address
+            return jsonify({
+                "user_id": session.get("user_id"), 
+                "google_email_address": session.get("google_email_address")
+                })
+        else:
+            return jsonify(None)
+    
+    def get(self):
+        ''' Return the session '''
+        print(f"**************** Get session: {session.get('user_id')} and {session.items()} **********")
+
+        return jsonify({
+                "user_id": session.get("user_id"), 
+                "google_email_address": session.get("google_email_address")
+                })
+
+    def head(self):
+        ''' handle signout '''
+        connected_clients.pop(session.get("google_email_address"))
+        session.pop("google_email_address")
+        session.pop("user_id")
+        session.pop("sid")
+        return 'OK', 204
+
+    def patch(self):
+        return 0
+        
+class EmailItem(MethodResource, Resource):
+    def post(self):
+        print(f"**************** Add email item: {session.get('user_id')} and {session.items()} **********")
+        # get the request from the subscription to the email topic 
+        subPubData = subPub(request.data)
+        print(subPubData)
+        # pull ONLY MESSAGED ADDED since the last stored history id
+        # This means we'll need to get an access token by using a refresh token
+        user = User.query.filter_by(google_email_address=subPubData['emailAddress']).first()
+        data = {
+                'client_id': os.environ.get('google_client_id'),
+                'client_secret': os.environ.get('google_client_secret'),
+                'refresh_token': user.google_refresh_token,
+                'grant_type': 'refresh_token'}
+        r = requests.post('https://oauth2.googleapis.com/token', data=data)
+        accessJson = json.loads(r.text)
+        headers = {'Authorization': 'Bearer {}'.format(accessJson['access_token'])}
+        params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
+        history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
+        email_json = json.loads(history_response.text)
+        if email_json.get('history'):
+            email_id = email_json['history'][0]['messages'][0]['id']
+            # email_thread_id = history_response.data['history']['messages']['threadId']
+            email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
+            email = json.loads(email_response.text)
+            for header in email['payload']['headers']:
+                if header['name'].lower() == 'subject':
+                    item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
+                    db.session.add(item)
+                    db.session.commit()
+                    if user.google_email_address in connected_clients:
+                        for socket_session in connected_clients[user.google_email_address]:
+                            socketio.emit('new_email_item', item.serialize(), to=socket_session)
+                    break
+        else:
+            print('no history id')
+        # after the emails have been received, store the new history id
+        user.google_history_id = subPubData['historyId']
         db.session.add(user)
         db.session.commit()
-        session["user_id"] = user.u_id
-        return user.serialize()
-    else:
-        return jsonify({"message": "User Exists"})
+        return 'OK', 200
 
+# @socketio.on('new_email_item')
+# def emitNewItem(item):
+#     print(request.items())
+#     data = {'data': {
+#                 'i_title': item['i_title'], 
+#                 'i_dt_created': item['i_dt_created'].isoformat()
+#                 }
+#             }
+#     print(data)
+#     emit('new_email_item', data)
 
-@app.route("/signin", methods=["POST"])
-def signin():
-    """Produce login form or handle login."""
-
-    print(f"**************** Login: {session.get('user_id')} and {session.items()} **********")
-    response = json.loads(request.data)
-    name = response.get('username')
-    pwd = response.get('password')
-    user = User.authenticate(name, pwd)
-    if user:
-        session["user_id"] = user.u_id
-        return user.serialize()
-    else:
-        return jsonify({"message": "invalid user"})
-        
-@app.route("/logout", methods=["GET"])
-def logout():
-    session.pop("user_id")
-    return jsonify({'message': 'logout successful'})
-
-@app.route('/api/item/email-item/add', methods=['POST'])
-def addEmailItem():
-    print(f"**************** Add email item: {session.get('user_id')} and {session.items()} **********")
-    # get the request from the subscription to the email topic 
-    subPubData = subPub(request.data)
-    print(subPubData)
-    # pull ONLY MESSAGED ADDED since the last stored history id
-    # This means we'll need to get an access token by using a refresh token
-    user = User.query.filter_by(google_email_address=subPubData['emailAddress']).first()
-    data = {
-            'client_id': os.environ.get('google_client_id'),
-            'client_secret': os.environ.get('google_client_secret'),
-            'refresh_token': user.google_refresh_token,
-            'grant_type': 'refresh_token'}
-    r = requests.post('https://oauth2.googleapis.com/token', data=data)
-    accessJson = json.loads(r.text)
-    headers = {'Authorization': 'Bearer {}'.format(accessJson['access_token'])}
-    params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
-    history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
-    email_json = json.loads(history_response.text)
-    if email_json.get('history'):
-        email_id = email_json['history'][0]['messages'][0]['id']
-        # email_thread_id = history_response.data['history']['messages']['threadId']
-        email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
-        email = json.loads(email_response.text)
-        for header in email['payload']['headers']:
-            if header['name'].lower() == 'subject':
-                item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
-                db.session.add(item)
-                db.session.commit()
-                if item.u_id == session.get("user_id"):
-                    socketio.emit('my_response', item.serialize())
-                break
-    else:
-        print('no history id')
-    # after the emails have been received, store the new history id
-    user.google_history_id = subPubData['historyId']
-    db.session.add(user)
-    db.session.commit()
-    return 'OK', 200
-
-@socketio.on('my_response')
-def emitNewItem(item):
-    data = {'data': {
-                'i_title': item['i_title'], 
-                'i_dt_created': item['i_dt_created'].isoformat()
-                }
-            }
-    print(data)
-    emit('my_response', data)
+@socketio.on('connect')
+def registerSocketToSession():
+    print(f"*****A new session!!! It's {request.sid}*****")
+    session['sid'] = request.sid
+    if session.get('user_id'):
+        connected_user = User.query.get(session['user_id'])
+        connected_user_email_address = connected_user.google_email_address
+        sid_exists_in_connected_clients = False
+        if connected_user_email_address in connected_clients:
+            if session.get('sid'):
+                print(f"******* SID during session GET request: f{session['sid']}*****")
+                for client_sid in connected_clients[connected_user_email_address]:
+                    if session['sid'] == client_sid:
+                        sid_exists_in_connected_clients = True
+                if not sid_exists_in_connected_clients:
+                    connected_clients[connected_user_email_address].append(session['sid'])
+        elif not connected_user_email_address in connected_clients:
+            if session.get('sid'):
+                connected_clients[connected_user_email_address] = []
+                connected_clients[connected_user_email_address].append(session['sid'])
+    print (f"****** SID upon socket connection request: {session['sid']}")
 
 
 @app.route('/google451aa8ff7f9058a5.html')
@@ -220,46 +253,47 @@ class AppItems(MethodResource, Resource):
         items = [item.serialize() for item in Item.query.filter_by(u_id=session['user_id']).all()]
         return items
 
-class Session(MethodResource, Resource):
-    def get(self):
-        print(f"**************** Get the session: {session.get('user_id')} and {session.items()} **********")
-        return json.dumps(session.get('user_id'))
 
-@doc(description="A means of accessing a single Item")
-@use_kwargs(ItemRequest, location=('json'))
-@marshal_with(ItemResponse)
+# @doc(description="A means of accessing a single Item")
+# @use_kwargs(ItemRequest, location=('json'))
+# @marshal_with(ItemResponse)
 class AppItem(MethodResource, Resource):
-    def post(self, **kwargs):
-        parser.add_argument([*kwargs][0])
-        args = parser.parse_args()
-        item = Item(i_title=args['i_title'], 
+    def post(self):
+        print(f"**************** Create custom item: {session.get('user_id')} and {session.items()} **********")
+        submitted_title = json.loads(request.data)
+        item = Item(i_title=submitted_title['i_title'], 
                     i_dt_created=datetime.now(),
                     u_id = session["user_id"]
                     )
         db.session.add(item)
         db.session.commit()
-        return item.serialize()
+        print(jsonify(item.serialize()))
+        return jsonify(item.serialize())
 
-class AppRandomItem(MethodResource, Resource):
-    def post(self):
+    def get(self):
+        print(f"**************** Create random item: {session.get('user_id')} and {session.items()} **********")
         randomItem = Item(i_title=Item.generateRandomTitle(), 
                           i_dt_created=datetime.now(),
                           u_id = session["user_id"]
                         )
         db.session.add(randomItem)
         db.session.commit()
-        return randomItem.serialize()
+        print(jsonify(randomItem.serialize()))
+        return jsonify(randomItem.serialize())
+        
 
 api.add_resource(AppItems, '/api/items/all')
-api.add_resource(AppRandomItem, '/api/item/random-item')
 api.add_resource(AppItem, '/api/item')
-api.add_resource(Session, '/api/user')
+api.add_resource(Session, '/api/session')
 api.add_resource(GoogleAuth, "/googleoauth2callback")
+api.add_resource(EmailItem, '/api/item/email-item/add')
 # api.add_resource(EmailWatch, '/api/item/email-item/watch')
 # docs.register(EmailWatch)
 docs.register(AppItems)
 docs.register(AppItem)
-docs.register(AppRandomItem)
+docs.register(Session)
+docs.register(GoogleAuth)
+docs.register(EmailItem)
 
 if __name__ == "__main__":
     socketio.run(app, port=int(os.environ.get('PORT', '5000')))

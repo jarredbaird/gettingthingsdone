@@ -7,3 +7,4 @@ header-files.work.vim
 package-lock.json
 package.json
 node_modules/
+flask_session/
