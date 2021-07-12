@@ -7,11 +7,14 @@ export class NavBar {
       "bg-primary",
     ]);
     this.$barContainer = $("<div>").addClass("container").attr("id", "main");
-    this.$brand = $("<a>").addClass("navbar-brand").text("Getting Things Done");
-    this.$toggler = $("button").addClass("navbar-toggler").attr({
+    this.$brand = $("<a>")
+      .addClass("navbar-brand")
+      .text("Getting Things Done")
+      .attr("href", "/");
+    this.$toggler = $("<button>").addClass("navbar-toggler").attr({
       type: "button",
       "data-bs-toggle": "collapse",
-      "data-bs-target": "navbarToggler",
+      "data-bs-target": "#navbarToggler",
       "aria-controls": "navbarToggler",
       "aria-expanded": "false",
       "aria-label": "Toggle navigation",
@@ -26,7 +29,7 @@ export class NavBar {
       .append(
         $("<a>")
           .addClass("nav-link active")
-          .attr("aria-current", "page")
+          .attr({ "aria-current": "page", id: "signin", href: "#" })
           .text("Sign In")
       );
     this.$signup = $("<li>")
@@ -34,31 +37,33 @@ export class NavBar {
       .append(
         $("<a>")
           .addClass("nav-link")
-          .attr("aria-current", "page")
+          .attr({ "aria-current": "page", id: "signup", href: "#" })
           .text("Sign Up")
       );
-    this.$logout = $("<li>")
+    this.$signout = $("<li>")
       .addClass("nav-item")
       .append(
         $("<a>")
           .addClass("nav-link")
-          .attr({ "aria-current": "page" })
-          .text("Logout")
-          .attr("id", "logout")
+          .attr({ "aria-current": "page", id: "signout", href: "#" })
+          .text("Sign Out")
       );
     this.$connectToGmail = $("<li>")
       .addClass("nav-item")
       .append(
         $("<a>")
           .addClass("nav-link")
-          .attr({ "aria-current": "page" })
+          .attr({
+            "aria-current": "page",
+            id: "gmail",
+            href: "/googleoauth2callback",
+          })
           .text("Connect to Gmail")
-          .attr({ id: "gmail", href: "/googleoauth2callback" })
       );
     this.$menuItems = [
       this.$signin,
       this.$signup,
-      this.$logout,
+      this.$signout,
       this.$connectToGmail,
     ];
     this.$subNavContainer = $("<div>")

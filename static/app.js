@@ -6,121 +6,23 @@ import { SignInSignUp } from "./modules/signin-signup.js";
 
 /* DOM Rendering */
 
+let socket = null;
 let navBar = new NavBar();
 navBar.makeNavbar($("body"));
-
-$("#logout").on("click", async function () {
-  await fetch("/logout");
-  $("#main-grid").empty();
-  await userFlow();
+navBar.$signin.on("click", function (event) {
+  event.preventDefault();
+  displaySignIn();
+});
+navBar.$signup.on("click", function (event) {
+  event.preventDefault();
+  displaySignUp();
+});
+navBar.$signout.on("click", async function (event) {
+  event.preventDefault;
+  await signOut();
 });
 
 await userFlow();
-
-let socket = io();
-socket.on("my_response", function (msg, cb) {
-  let nonDOMitem = new ListGroupItem(msg);
-  console.log(nonDOMitem.makeItem());
-  $("#inbox-list").prepend(nonDOMitem.makeItem());
-  if (cb) cb();
-});
-
-async function userFlow() {
-  let userSession = await getSession();
-  if (userSession) {
-    await showUserInbox();
-  } else {
-    let buttons = new SignInSignUp();
-    $("#main-grid").append(
-      $("<div>")
-        .addClass("input-group input-group-lg")
-        .append(buttons.$signUpBtn, buttons.$signInBtn)
-    );
-    buttons.$signUpBtn.on("click", function () {
-      $("#main-grid").empty();
-      $("#main-grid").append(
-        $("<h2>").text("Sign Up"),
-        $("<form>")
-          .addClass("row g-3")
-          .append(
-            $("<div>")
-              .addClass("input-group input-group-lg")
-              .append(
-                $("<input>").addClass("form-control").attr({
-                  type: "text",
-                  placeholder: "Username",
-                  id: "username",
-                }),
-                $("<input>").addClass("form-control").attr({
-                  type: "text",
-                  placeholder: "Password",
-                  id: "password",
-                }),
-                $("<button>")
-                  .addClass("btn btn-primary")
-                  .text("Submit")
-                  .on("click", async function (event) {
-                    event.preventDefault();
-                    let response = await createUser(
-                      $("#username").val(),
-                      $("#password").val()
-                    );
-                    debugger;
-                    if (!response.message) {
-                      $("#main-grid").empty();
-                      await showUserInbox();
-                    } else {
-                      $("#main-grid").empty();
-                      await userFlow();
-                    }
-                  })
-              )
-          )
-      );
-    });
-    buttons.$signInBtn.on("click", function () {
-      $("#main-grid").empty();
-      $("#main-grid").append(
-        $("<h2>").text("Sign In"),
-        $("<form>")
-          .addClass("row g-3")
-          .append(
-            $("<div>")
-              .addClass("input-group input-group-lg")
-              .append(
-                $("<input>").addClass("form-control").attr({
-                  type: "text",
-                  placeholder: "Username",
-                  id: "username",
-                }),
-                $("<input>").addClass("form-control").attr({
-                  type: "text",
-                  placeholder: "Password",
-                  id: "password",
-                }),
-                $("<button>")
-                  .addClass("btn btn-primary")
-                  .text("Submit")
-                  .on("click", async function (event) {
-                    event.preventDefault();
-                    let response = await getUser(
-                      $("#username").val(),
-                      $("#password").val()
-                    );
-                    if (!response.message) {
-                      $("#main-grid").empty();
-                      await showUserInbox();
-                    } else {
-                      $("#main-grid").empty();
-                      await userFlow();
-                    }
-                  })
-              )
-          )
-      );
-    });
-  }
-}
 
 async function showUserInbox() {
   $("#main-grid").empty();
@@ -137,11 +39,10 @@ async function showUserInbox() {
     listGroup.addItem(nonDOMitem.makeItem());
   });
 
-  /* event listeners */
-
   inputBox.$randBtn.on("click", async function (event) {
     event.preventDefault();
     let response = await ListGroupItem.generateRandomItem();
+    console.log(response);
     let nonDOMitem = new ListGroupItem(response);
     listGroup.addItem(nonDOMitem.makeItem());
     updateTimeSinceCreation();
@@ -172,45 +73,185 @@ async function showUserInbox() {
   });
 }
 
-/* functions */
-
-async function createUser(username, password) {
-  let user = await fetch("/signup", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: username,
-      password: password,
-    }),
-  }).then((response) => response.json());
-  return user;
-}
-
-async function getUser(username, password) {
-  let user = await fetch("/signin", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: username,
-      password: password,
-    }),
-  }).then((response) => response.json());
-  return user;
-}
-
-async function getSession() {
-  let sessionInfo = await fetch("/api/user", {
-    method: "GET",
-  }).then((resp) => resp.json());
-  return sessionInfo["user_id"];
-}
-
 function updateTimeSinceCreation() {
   for (let i of $(".list-group").find($("small"))) {
     i.innerText = `${ListGroupItem.findDateDiff(i.dataset.iDtCreated)}`;
   }
+}
+
+/****** User flow ******/
+
+async function userFlow() {
+  let userSession = await getSession();
+  if (userSession["user_id"]) {
+    $("#signout").show();
+    $("#signup").hide();
+    $("#signin").hide();
+    $("#gmail").show();
+    if (userSession["google_email_address"]) {
+      $("#gmail")
+        .text("Connected to gmail (sorry...you can't disconnect)")
+        .addClass("disabled")
+        .attr("href", null);
+    } else {
+      $("#gmail")
+        .text("Connect to Gmail")
+        .removeClass("disabled")
+        .attr("href", "/googleoauth2callback");
+    }
+    if (!socket) {
+      socket = io();
+    }
+    socket.on("new_email_item", function (msg, cb) {
+      let nonDOMitem = new ListGroupItem(msg);
+      $("#inbox-list").prepend(nonDOMitem.makeItem());
+      console.log(nonDOMitem.makeItem());
+      if (cb) cb();
+    });
+    await showUserInbox();
+  } else {
+    $("#signout").hide();
+    $("#signup").show();
+    $("#signin").show();
+    $("#gmail").hide();
+    if (socket) {
+      socket.disconnect();
+    }
+    socket = null;
+    let buttons = new SignInSignUp(signIn, signUp);
+    $("#main-grid").append(
+      $("<div>")
+        .addClass("input-group input-group-lg")
+        .append(
+          buttons.$signInBtn.on("click", async function (event) {
+            event.preventDefault();
+            displaySignIn();
+          }),
+          buttons.$signUpBtn.on("click", async function (event) {
+            event.preventDefault();
+            displaySignUp();
+          })
+        )
+    );
+  }
+}
+
+function displaySignUp() {
+  $("#main-grid").empty();
+  $("#main-grid").append(
+    $("<h2>").text("Sign Up"),
+    $("<form>")
+      .addClass("row g-3")
+      .append(
+        $("<div>")
+          .addClass("input-group input-group-lg")
+          .append(
+            $("<input>").addClass("form-control").attr({
+              type: "text",
+              placeholder: "Username",
+              id: "username",
+            }),
+            $("<input>").addClass("form-control").attr({
+              type: "text",
+              placeholder: "Password",
+              id: "password",
+            }),
+            $("<button>")
+              .addClass("btn btn-primary")
+              .text("Submit")
+              .attr("id", "signup")
+              .on("click", async function (event) {
+                event.preventDefault();
+                await passCreds($("username").val(), $("password").val());
+              })
+          )
+      )
+  );
+}
+
+function displaySignIn() {
+  $("#main-grid").empty();
+  $("#main-grid").append(
+    $("<h2>").text("Sign In"),
+    $("<form>")
+      .addClass("row g-3")
+      .append(
+        $("<div>")
+          .addClass("input-group input-group-lg")
+          .append(
+            $("<input>").addClass("form-control").attr({
+              type: "text",
+              placeholder: "Username",
+              id: "username",
+            }),
+            $("<input>").addClass("form-control").attr({
+              type: "text",
+              placeholder: "Password",
+              id: "password",
+            }),
+            $("<button>")
+              .addClass("btn btn-primary")
+              .text("Submit")
+              .attr("id", "signin")
+              .on("click", async function (event) {
+                event.preventDefault();
+                await passCreds($("#username").val(), $("#password").val());
+              })
+          )
+      )
+  );
+}
+
+async function passCreds(username, password) {
+  if ($("h2").text() === "Sign In") {
+    await signIn(username, password);
+    await userFlow();
+  } else if ($("h2").text() === "Sign Up") {
+    await signUp(username, password);
+    await userFlow();
+  }
+}
+
+async function signUp(username, password) {
+  let session = await fetch("/api/session", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password,
+      type: "signup",
+    }),
+  }).then((response) => response.json());
+  return session;
+}
+
+async function signIn(username, password) {
+  let session = await fetch("/api/session", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password,
+      type: "signin",
+    }),
+  }).then((response) => response.json());
+  return session;
+}
+
+async function getSession() {
+  let session = await fetch("/api/session", {
+    method: "GET",
+  }).then((resp) => resp.json());
+  console.log(session);
+  return session;
+}
+
+async function signOut() {
+  $("#main-grid").empty();
+  await fetch("api/session", { method: "HEAD" });
+  await userFlow();
 }
