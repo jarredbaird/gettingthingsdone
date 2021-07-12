@@ -199,13 +199,14 @@ class GoogleAuth(MethodResource, Resource):
             # converted into an access token. The access token expires within seconds...
             # ...but that's ok. We only need it long enough to set a watch on a 
             # sub/pub subscription
+            
             return redirect("https://accounts.google.com/o/oauth2/v2/auth?" \
                             "scope=https://www.googleapis.com/auth/gmail.readonly&" \
                             "access_type=offline&" \
                             "include_granted_scopes=true&" \
                             "response_type=code&" \
                             "prompt=consent&" \
-                            "redirect_uri=https://task-pwner.ngrok.io/googleoauth2callback&" \
+                            f"redirect_uri={os.environ.get('OAUTH2_REDIRECT')}&" \
                         f"client_id={os.environ.get('google_client_id')}")
         else:
             # if you got a pesky auth code from the oauth2 redirect params, turn that into an access token
@@ -214,7 +215,7 @@ class GoogleAuth(MethodResource, Resource):
             data = {'code': auth_code,
                     'client_id': os.environ.get('google_client_id'),
                     'client_secret': os.environ.get('google_client_secret'),
-                    'redirect_uri': "https://task-pwner.ngrok.io/googleoauth2callback",
+                    'redirect_uri': os.environ.get('OAUTH2_REDIRECT'),
                     'grant_type': 'authorization_code'}
             r = requests.post('https://oauth2.googleapis.com/token', data=data)
             # aha! got it! let's save that refresh token to the db

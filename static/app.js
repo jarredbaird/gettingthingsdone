@@ -162,7 +162,7 @@ function displaySignUp() {
               .attr("id", "signup")
               .on("click", async function (event) {
                 event.preventDefault();
-                await passCreds($("username").val(), $("password").val());
+                await passCreds($("#username").val(), $("#password").val());
               })
           )
       )
