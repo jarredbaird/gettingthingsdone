@@ -93,9 +93,13 @@ export class ListGroupItem {
 
   // returns json item with random title
   static async generateRandomItem() {
-    let newItem = await fetch("/api/item/random-item", {
-      method: "POST",
+    let newItem = await fetch("/api/item", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     }).then((resp) => resp.json());
+    console.log(newItem);
     return newItem;
   }
 
@@ -107,6 +111,7 @@ export class ListGroupItem {
       },
       body: JSON.stringify({ i_title: title }),
     }).then((resp) => resp.json());
+    console.log(newItem);
     return newItem;
   }
 }

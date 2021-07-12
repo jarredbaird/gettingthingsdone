@@ -14,6 +14,16 @@ def connect_db(app):
     db.app = app
     db.init_app(app)
 
+# class Sessions(db.Model):
+#     """This item ends up in your inbox to be refined later"""
+#     __tablename__ = "sessions"
+#     __table_args__ = {'extend_existing': True}
+#     id = db.Column(db.Integer, primary_key=True)
+#     session_id = db.Column(db.Text, nullable=False)
+#     data = db.Column(db.UnicodeText, nullable=True)
+#     user_id = db.Column(db.Integer, nullable=False)
+#     expiry = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
 class Item(db.Model):
     """This item ends up in your inbox to be refined later"""
     __tablename__ = "items"
