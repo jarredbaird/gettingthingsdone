@@ -37,6 +37,42 @@ async function showUserInbox() {
   listGroupItems.forEach((item) => {
     let nonDOMitem = new ListGroupItem(item);
     listGroup.addItem(nonDOMitem.makeItem());
+    $(`#${nonDOMitem.i_id}-btn-group`).hide();
+    $(`#${nonDOMitem.i_id}-del`).hide();
+    $(`#${nonDOMitem.i_id}-chk`).hide();
+    $(`#${nonDOMitem.i_id}`).hover(
+      function () {
+        $(this).find(`#${nonDOMitem.i_id}-card-body`).removeClass("col-md-12");
+        $(this).find(`#${nonDOMitem.i_id}-card-body`).addClass("col-md-10");
+        $(this).find(`#${nonDOMitem.i_id}-btn-group`).show();
+        $(this).find(`#${nonDOMitem.i_id}-del`).show();
+        $(this).find(`#${nonDOMitem.i_id}-chk`).show();
+      },
+      function () {
+        $(this).find(`#${nonDOMitem.i_id}-card-body`).addClass("col-md-12");
+        $(this).find(`#${nonDOMitem.i_id}-card-body`).removeClass("col-md-10");
+        $(this).find(`#${nonDOMitem.i_id}-btn-group`).hide();
+        $(this).find(`#${nonDOMitem.i_id}-del`).hide();
+        $(this).find(`#${nonDOMitem.i_id}-chk`).hide();
+      }
+    );
+    if (nonDOMitem.$cardContainer.data("iDone")) {
+      $(`#${nonDOMitem.i_id}-i-title`).wrap("<strike>");
+    }
+    $(`#${nonDOMitem.i_id}-chk`).on("click", async function (event) {
+      await checkItem(
+        event.target.parentElement.parentElement.parentElement.getAttribute(
+          "id"
+        )
+      );
+    });
+    $(`#${nonDOMitem.i_id}-del`).on("click", async function (event) {
+      await deleteItem(
+        event.target.parentElement.parentElement.parentElement.getAttribute(
+          "id"
+        )
+      );
+    });
   });
 
   inputBox.$randBtn.on("click", async function (event) {
@@ -88,7 +124,8 @@ async function userFlow() {
     $("#signup").hide();
     $("#signin").hide();
     $("#gmail").show();
-    if (userSession["google_email_address"]) {
+
+    if (userSession["google_refresh_token"]) {
       $("#gmail")
         .text("Connected to gmail (sorry...you can't disconnect)")
         .addClass("disabled")
@@ -105,6 +142,46 @@ async function userFlow() {
     socket.on("new_email_item", function (msg, cb) {
       let nonDOMitem = new ListGroupItem(msg);
       $("#inbox-list").prepend(nonDOMitem.makeItem());
+      $(`#${nonDOMitem.i_id}-btn-group`).hide();
+      $(`#${nonDOMitem.i_id}-del`).hide();
+      $(`#${nonDOMitem.i_id}-chk`).hide();
+      $(`#${nonDOMitem.i_id}`).hover(
+        function () {
+          $(this)
+            .find(`#${nonDOMitem.i_id}-card-body`)
+            .removeClass("col-md-12");
+          $(this).find(`#${nonDOMitem.i_id}-card-body`).addClass("col-md-10");
+          $(this).find(`#${nonDOMitem.i_id}-btn-group`).show();
+          $(this).find(`#${nonDOMitem.i_id}-del`).show();
+          $(this).find(`#${nonDOMitem.i_id}-chk`).show();
+        },
+        function () {
+          $(this).find(`#${nonDOMitem.i_id}-card-body`).addClass("col-md-12");
+          $(this)
+            .find(`#${nonDOMitem.i_id}-card-body`)
+            .removeClass("col-md-10");
+          $(this).find(`#${nonDOMitem.i_id}-btn-group`).hide();
+          $(this).find(`#${nonDOMitem.i_id}-del`).hide();
+          $(this).find(`#${nonDOMitem.i_id}-chk`).hide();
+        }
+      );
+      if (nonDOMitem.$cardContainer.data("iDone")) {
+        $(`#${nonDOMitem.i_id}-i-title`).wrap("<strike>");
+      }
+      $(`#${nonDOMitem.i_id}-chk`).on("click", async function (event) {
+        await checkItem(
+          event.target.parentElement.parentElement.parentElement.getAttribute(
+            "id"
+          )
+        );
+      });
+      $(`#${nonDOMitem.i_id}-del`).on("click", async function (event) {
+        await deleteItem(
+          event.target.parentElement.parentElement.parentElement.getAttribute(
+            "id"
+          )
+        );
+      });
       console.log(nonDOMitem.makeItem());
       if (cb) cb();
     });
@@ -254,4 +331,27 @@ async function signOut() {
   $("#main-grid").empty();
   await fetch("api/session", { method: "HEAD" });
   await userFlow();
+}
+
+async function checkItem(i_id) {
+  let checked = await fetch("api/item", {
+    method: "PATCH",
+    body: JSON.stringify({ i_id: i_id }),
+  }).then((response) => response.json());
+  if (checked["i_done"]) {
+    $(`#${i_id}-i-title`).wrap("<strike>");
+    $(`${i_id}`).append($("#inbox-list"));
+  } else {
+    $(`#${i_id}-i-title`).unwrap().prepend($("#inbox-list"));
+
+    $(`${i_id}`).prepend($("#inbox-list"));
+  }
+}
+
+async function deleteItem(i_id) {
+  let deleted = await fetch("api/item", {
+    method: "DELETE",
+    body: JSON.stringify({ i_id: i_id }),
+  }).then((response) => response.json());
+  $(`#${i_id}`).remove();
 }

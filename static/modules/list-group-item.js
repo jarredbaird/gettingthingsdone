@@ -3,32 +3,49 @@ export class ListGroupItem {
     // find the difference between the date the task was opened and now
     this.dateDiff = this.constructor.findDateDiff(data.i_dt_created);
     this.i_dt_created = data.i_dt_created;
+    this.i_id = data.i_id;
+    this.$cardContainer = $("<div>")
+      .addClass("card w-100")
+      .attr({ id: `${data.i_id}`, "data-i-done": data.i_done });
+
+    this.$cardRow = $("<div>").addClass("row g-0");
+
+    // container for the item options
+
+    this.$btnGroupContainer = $("<div>")
+      .addClass("col-md-2 d-flex justify-content-left")
+      .attr("id", `${data.i_id}-btn-group`);
+
+    this.$delContainer = $("<button>")
+      .addClass("btn btn-danger")
+      .html('<i class="fa fa-trash-o fa-lg"></i> Delete</a>')
+      .attr("id", `${data.i_id}-del`);
+
+    this.$chkContainer = $("<button>")
+      .addClass("btn btn-success")
+      .html('<i class="fa fa-check fa-lg"></i> Done</a>')
+      .attr("id", `${data.i_id}-chk`);
+
+    this.$cardBodyContainer = $("<div>")
+      .addClass("col-md-12")
+      .attr("id", `${data.i_id}-card-body`);
 
     // create list container for everything else
-    this.$listItemContainer = $("<a>")
-      .attr("id", data.id)
-      .addClass("list-group-item list-group-item-action");
+    this.$cardBody = $("<div>").addClass("card-body");
 
-    // create the div to go in the <a>
-    this.$contentDiv = $("<div>").addClass(
-      "d-flex w-100 justify-content-between"
-    );
-
-    // create h5
-    this.$i_title = $("<h5>").text(`${data.i_title}`);
+    // create title object
+    this.$cardTitle = $("<h5>")
+      .text(`${data.i_title}`)
+      .attr("id", `${data.i_id}-i-title`);
 
     // display how long ago this item was created
-    this.$timer = $("<small>")
-      .text(this.dateDiff)
+    this.$timer = $("<p>")
+      .addClass("card-text")
+      .html(`<small class="text-muted">${this.dateDiff}</small>`)
       .attr("data-i-dt-created", `${data.i_dt_created}`);
 
     // create p
     this.$descr = $("<p>").text(`${data.i_descr ? data.i_descr : ""}`);
-
-    // create delete
-    this.$delete = $("<i>")
-      .addClass(["fa", "fa-trash"])
-      .attr("aria-hidden", "true");
 
     // create slider - not gonna use for now
     // this.$rangeLabel = $("<label>")
@@ -85,13 +102,19 @@ export class ListGroupItem {
 
   makeItem() {
     // put it all together
-    let item = this.$listItemContainer.append(
-      this.$contentDiv.append(this.$i_title, this.$timer, this.$),
-      this.$descr
-      // range slider is unnecessary
-      // this.$rangeLabel,
-      // this.$slideRange,
-      // this.$rangeDescr
+    let item = this.$cardContainer.append(
+      this.$cardRow.append(
+        this.$btnGroupContainer
+          .append(this.$delContainer.hide(), this.$chkContainer.hide())
+          .hide(),
+        this.$cardBodyContainer.append(
+          this.$cardBody.append(this.$cardTitle, this.$timer)
+        )
+        // range slider is unnecessary
+        // this.$rangeLabel,
+        // this.$slideRange,
+        // this.$rangeDescr
+      )
     );
     return item;
   }

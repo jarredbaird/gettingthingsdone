@@ -29,6 +29,7 @@ class Item(db.Model):
     __tablename__ = "items"
     i_id = db.Column(db.Integer, primary_key=True)
     i_title = db.Column(db.Text, nullable=False)
+    i_done = db.Column(db.Boolean, default=False)
     i_descr = db.Column(db.Text, nullable=True)
     i_dt_created = db.Column(db.DateTime, nullable=False, default=datetime.now())
     u_id = db.Column(db.Integer, db.ForeignKey('users.u_id'))
@@ -46,6 +47,7 @@ class Item(db.Model):
         return {
             'i_id': self.i_id,
             'i_title': self.i_title,
+            'i_done': self.i_done,
             'i_descr': self.i_descr,
             'i_dt_created': self.i_dt_created.isoformat(),
             'u_id': self.u_id,

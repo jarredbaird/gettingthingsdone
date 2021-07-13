@@ -74,9 +74,10 @@ class Session (MethodResource, Resource):
         if user:
             session["user_id"] = user.u_id
             session["google_email_address"] = user.google_email_address
+            session["google_refresh_token"] = True if user.google_refresh_token else None
             return jsonify({
                 "user_id": session.get("user_id"), 
-                "google_email_address": session.get("google_email_address")
+                "google_refresh_token": session.get("google_refresh_token")
                 })
         else:
             return jsonify(None)
@@ -84,10 +85,9 @@ class Session (MethodResource, Resource):
     def get(self):
         ''' Return the session '''
         print(f"**************** Get session: {session.get('user_id')} and {session.items()} **********")
-
         return jsonify({
                 "user_id": session.get("user_id"), 
-                "google_email_address": session.get("google_email_address")
+                "google_refresh_token": True if session.get("google_refresh_token") else None
                 })
 
     def head(self):
@@ -110,38 +110,41 @@ class EmailItem(MethodResource, Resource):
         # pull ONLY MESSAGED ADDED since the last stored history id
         # This means we'll need to get an access token by using a refresh token
         user = User.query.filter_by(google_email_address=subPubData['emailAddress']).first()
-        data = {
-                'client_id': os.environ.get('google_client_id'),
-                'client_secret': os.environ.get('google_client_secret'),
-                'refresh_token': user.google_refresh_token,
-                'grant_type': 'refresh_token'}
-        r = requests.post('https://oauth2.googleapis.com/token', data=data)
-        accessJson = json.loads(r.text)
-        headers = {'Authorization': 'Bearer {}'.format(accessJson['access_token'])}
-        params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
-        history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
-        email_json = json.loads(history_response.text)
-        if email_json.get('history'):
-            email_id = email_json['history'][0]['messages'][0]['id']
-            # email_thread_id = history_response.data['history']['messages']['threadId']
-            email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
-            email = json.loads(email_response.text)
-            if email.get('payload'):
-                for header in email['payload']['headers']:
-                    if header['name'].lower() == 'subject':
-                        item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
-                        db.session.add(item)
-                        db.session.commit()
-                        if user.google_email_address in connected_clients:
-                            for socket_session in connected_clients[user.google_email_address]:
-                                socketio.emit('new_email_item', item.serialize(), to=socket_session)
-                        break
+        if user.google_refresh_token:
+            data = {
+                    'client_id': os.environ.get('google_client_id'),
+                    'client_secret': os.environ.get('google_client_secret'),
+                    'refresh_token': user.google_refresh_token,
+                    'grant_type': 'refresh_token'}
+            r = requests.post('https://oauth2.googleapis.com/token', data=data)
+            accessJson = json.loads(r.text)
+            headers = {'Authorization': 'Bearer {}'.format(accessJson['access_token'])}
+            params = {'historyTypes': ['messageAdded'], 'startHistoryId': user.google_history_id}
+            history_response = requests.get('https://gmail.googleapis.com/gmail/v1/users/me/history', headers=headers, params=params)
+            email_json = json.loads(history_response.text)
+            if email_json.get('history'):
+                email_id = email_json['history'][0]['messages'][0]['id']
+                # email_thread_id = history_response.data['history']['messages']['threadId']
+                email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
+                email = json.loads(email_response.text)
+                if email.get('payload'):
+                    for header in email['payload']['headers']:
+                        if header['name'].lower() == 'subject':
+                            item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
+                            db.session.add(item)
+                            db.session.commit()
+                            if user.google_email_address in connected_clients:
+                                for socket_session in connected_clients[user.google_email_address]:
+                                    socketio.emit('new_email_item', item.serialize(), to=socket_session)
+                            break
+                # after the emails have been received, store the new history id
+                user.google_history_id = subPubData['historyId']
+                db.session.add(user)
+                db.session.commit()
+            else:
+                print('no history id')
         else:
-            print('no history id')
-        # after the emails have been received, store the new history id
-        user.google_history_id = subPubData['historyId']
-        db.session.add(user)
-        db.session.commit()
+            print("no refresh token")
         return 'OK', 200
 
 # @socketio.on('new_email_item')
@@ -224,6 +227,7 @@ class GoogleAuth(MethodResource, Resource):
             # get this user so we can modify it as needed
             user = User.query.get(session['user_id'])
             user.google_refresh_token = credentials['refresh_token']
+            session["google_refresh_token"] = user.google_refresh_token
             headers = {'Authorization': 'Bearer {}'.format(credentials['access_token'])}
             watchData={'topicName': "projects/taskpwner/topics/received-emails", 'labelIds': ["INBOX"]}
             watchResponse = requests.post("https://gmail.googleapis.com/gmail/v1/users/me/watch", headers=headers, data=watchData)
@@ -282,6 +286,24 @@ class AppItem(MethodResource, Resource):
         db.session.commit()
         print(jsonify(randomItem.serialize()))
         return jsonify(randomItem.serialize())
+    
+    def patch(self):
+        incoming_checked_item = json.loads(request.data)
+        checked_item = Item.query.get(incoming_checked_item.get("i_id"))
+        if checked_item.i_done:
+            checked_item.i_done = False
+        else:
+            checked_item.i_done = True
+        db.session.add(checked_item)
+        db.session.commit()
+        return jsonify(checked_item.serialize())
+
+    def delete(self):
+        imcoming_deleted_item = json.loads(request.data)
+        deleted_item = Item.query.get(imcoming_deleted_item.get("i_id"))
+        db.session.delete(deleted_item)
+        db.session.commit()
+        return jsonify({'to_delete': imcoming_deleted_item.get("i_id")})
         
 
 api.add_resource(AppItems, '/api/items/all')
