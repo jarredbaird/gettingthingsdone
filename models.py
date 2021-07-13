@@ -99,7 +99,10 @@ class User(db.Model):
             hashed_utf8 = hashed.decode("utf8")
 
             # return instance of user w/username and hashed pwd
-            return cls(u_username=username, password=hashed_utf8)
+            new_user = cls(u_username=username, password=hashed_utf8)
+            db.session.add(new_user)
+            db.session.commit()
+            return new_user
         else:
             return False
 
