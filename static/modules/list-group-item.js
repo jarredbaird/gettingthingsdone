@@ -25,6 +25,11 @@ export class ListGroupItem {
     // create p
     this.$descr = $("<p>").text(`${data.i_descr ? data.i_descr : ""}`);
 
+    // create delete
+    this.$delete = $("<i>")
+      .addClass(["fa", "fa-trash"])
+      .attr("aria-hidden", "true");
+
     // create slider - not gonna use for now
     // this.$rangeLabel = $("<label>")
     //   .addClass("form-label")
@@ -81,7 +86,7 @@ export class ListGroupItem {
   makeItem() {
     // put it all together
     let item = this.$listItemContainer.append(
-      this.$contentDiv.append(this.$i_title, this.$timer),
+      this.$contentDiv.append(this.$i_title, this.$timer, this.$),
       this.$descr
       // range slider is unnecessary
       // this.$rangeLabel,

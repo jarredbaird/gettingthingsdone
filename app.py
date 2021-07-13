@@ -126,15 +126,16 @@ class EmailItem(MethodResource, Resource):
             # email_thread_id = history_response.data['history']['messages']['threadId']
             email_response = requests.get(f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{email_id}", headers=headers)
             email = json.loads(email_response.text)
-            for header in email['payload']['headers']:
-                if header['name'].lower() == 'subject':
-                    item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
-                    db.session.add(item)
-                    db.session.commit()
-                    if user.google_email_address in connected_clients:
-                        for socket_session in connected_clients[user.google_email_address]:
-                            socketio.emit('new_email_item', item.serialize(), to=socket_session)
-                    break
+            if email.get('payload'):
+                for header in email['payload']['headers']:
+                    if header['name'].lower() == 'subject':
+                        item = Item(i_title=header['value'], i_dt_created=datetime.now(), u_id=user.u_id)
+                        db.session.add(item)
+                        db.session.commit()
+                        if user.google_email_address in connected_clients:
+                            for socket_session in connected_clients[user.google_email_address]:
+                                socketio.emit('new_email_item', item.serialize(), to=socket_session)
+                        break
         else:
             print('no history id')
         # after the emails have been received, store the new history id
