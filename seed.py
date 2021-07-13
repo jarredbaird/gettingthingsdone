@@ -7,7 +7,7 @@ db.create_all()
 ''' u1 '''
 u1 = User.register("jarredbaird@gmail.com", "jarred")
 u1.google_email_address = "jarredbaird@gmail.com"
-u1.google_refresh_token = "os.environ.get("google_refresh_token")"
+u1.google_refresh_token = os.environ.get("google_refresh_token")
 """ reset the u1 historyId """
 # get the access token using the refresh token
 data = {
